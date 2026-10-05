@@ -6,15 +6,15 @@ import {
 } from "../src/engine/probability.js";
 
 describe("perDieHitProbability", () => {
-  it("is 2/6 for a non-ace face when 1s are wild", () => {
-    expect(perDieHitProbability(4, true)).toBeCloseTo(2 / 6);
+  it("is 2/6 for a non-ace face outside Palifico", () => {
+    expect(perDieHitProbability(4, false)).toBeCloseTo(2 / 6);
   });
-  it("is 1/6 for an ace bid even when wild (wildness doesn't double-count itself)", () => {
-    expect(perDieHitProbability(1, true)).toBeCloseTo(1 / 6);
+  it("is 1/6 for an ace bid outside Palifico (wildness doesn't double-count itself)", () => {
+    expect(perDieHitProbability(1, false)).toBeCloseTo(1 / 6);
   });
   it("is 1/6 for any face during Palifico (no wilds)", () => {
-    expect(perDieHitProbability(4, false)).toBeCloseTo(1 / 6);
-    expect(perDieHitProbability(1, false)).toBeCloseTo(1 / 6);
+    expect(perDieHitProbability(4, true)).toBeCloseTo(1 / 6);
+    expect(perDieHitProbability(1, true)).toBeCloseTo(1 / 6);
   });
 });
 
@@ -49,20 +49,20 @@ describe("binomialAtLeast", () => {
 describe("probabilityBidIsTrue", () => {
   it("returns 1 when the player's own hand already satisfies the bid", () => {
     const p = probabilityBidIsTrue({
-      knownHand: [4, 4, 4],
+      hand: [4, 4, 4],
       bid: { quantity: 2, face: 4 },
       unknownDiceCount: 5,
-      onesWild: true,
+      isPalifico: false,
     });
     expect(p).toBe(1);
   });
 
   it("returns 0 when there aren't enough unknown dice to possibly satisfy it", () => {
     const p = probabilityBidIsTrue({
-      knownHand: [2, 3],
+      hand: [2, 3],
       bid: { quantity: 5, face: 4 },
       unknownDiceCount: 3,
-      onesWild: true,
+      isPalifico: false,
     });
     expect(p).toBe(0);
   });
@@ -71,10 +71,10 @@ describe("probabilityBidIsTrue", () => {
     let prev = 1;
     for (let q = 1; q <= 10; q++) {
       const p = probabilityBidIsTrue({
-        knownHand: [2, 5],
+        hand: [2, 5],
         bid: { quantity: q, face: 5 },
         unknownDiceCount: 8,
-        onesWild: true,
+        isPalifico: false,
       });
       expect(p).toBeLessThanOrEqual(prev + 1e-9);
       prev = p;
@@ -83,16 +83,16 @@ describe("probabilityBidIsTrue", () => {
 
   it("credits wild 1s in the known hand toward a non-ace bid", () => {
     const withAce = probabilityBidIsTrue({
-      knownHand: [1, 2],
+      hand: [1, 2],
       bid: { quantity: 2, face: 6 },
       unknownDiceCount: 4,
-      onesWild: true,
+      isPalifico: false,
     });
     const withoutAce = probabilityBidIsTrue({
-      knownHand: [2, 2],
+      hand: [2, 2],
       bid: { quantity: 2, face: 6 },
       unknownDiceCount: 4,
-      onesWild: true,
+      isPalifico: false,
     });
     expect(withAce).toBeGreaterThan(withoutAce);
   });

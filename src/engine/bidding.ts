@@ -1,162 +1,109 @@
-import type { Bid, Face } from "../types.js";
+import type { Bid } from "../types/bid.js";
+import { ALL_FACES, type Face } from "../types/face.js";
 
-export interface BidContext {
-  /** Total dice still in play across all remaining players. */
+export interface BiddingRules {
+  currentBid: Bid | null;
+  isPalifico: boolean;
   totalDiceInPlay: number;
-  isPalificoRound: boolean;
-  /** Set once the first bid of a Palifico round has been placed. */
-  palificoFace: Face | null;
 }
 
-export interface BidValidation {
-  valid: boolean;
-  reason?: string;
+export type BidValidation = { valid: true } | { valid: false; reason: string };
+
+const VALID: BidValidation = { valid: true };
+
+function invalid(reason: string): BidValidation {
+  return { valid: false, reason };
 }
 
 /**
- * The minimum legal quantity for a bid on `toFace` that follows a bid of
- * `fromQuantity` on `fromFace`, under standard wild-aces transition rules:
- *  - non-ace -> ace: aces count double, so the equivalent quantity halves
- *    (rounded up, since you must at least match the "value" of the bid you're
- *    replacing).
- *  - ace -> non-ace: the inverse, doubled plus one to force a genuine raise.
- *  - same regime: ordinary "higher quantity, or same quantity higher face"
- *    rule (face-to-face only meaningful within non-ace faces).
+ * Smallest quantity allowed when switching from a bid on `fromFace` to a bid
+ * on `toFace`. Aces count as two of any other face, so moving onto aces
+ * halves the quantity (rounded up) and moving off aces doubles it plus one.
  */
-export function minimumNextQuantity(
-  fromQuantity: number,
-  fromFace: Face,
-  toFace: Face,
-): number {
+export function minimumNextQuantity(fromQuantity: number, fromFace: Face, toFace: Face): number {
   const fromIsAce = fromFace === 1;
   const toIsAce = toFace === 1;
-
-  if (!fromIsAce && !toIsAce) {
-    // same-regime raise; quantity strictly greater is always sufficient here.
-    // (the "same quantity, higher face" case is handled by the caller via
-    // compareBids / isValidRaise, since it doesn't require an *increase* in
-    // quantity at all.)
-    return fromQuantity + 1;
-  }
-  if (!fromIsAce && toIsAce) {
-    return Math.ceil(fromQuantity / 2);
-  }
-  if (fromIsAce && !toIsAce) {
-    return fromQuantity * 2 + 1;
-  }
-  // ace -> ace
+  if (!fromIsAce && toIsAce) return Math.ceil(fromQuantity / 2);
+  if (fromIsAce && !toIsAce) return fromQuantity * 2 + 1;
   return fromQuantity + 1;
 }
 
 /**
- * Validates `next` as a legal raise over `previous` (or as a legal opening
- * bid, if `previous` is null) given the round context.
+ * Bids above the dice in play are legal (and always lose), so this only
+ * rejects non-positive quantities and absurd input.
  */
-export function isValidRaise(
-  previous: Bid | null,
-  next: Bid,
-  ctx: BidContext,
-): BidValidation {
+function checkQuantity(next: Bid, totalDiceInPlay: number): BidValidation {
   if (!Number.isInteger(next.quantity) || next.quantity < 1) {
-    return { valid: false, reason: "Quantity must be a positive integer." };
+    return invalid("Quantity must be a positive integer.");
   }
-  if (!ctx.totalDiceInPlay || next.quantity > ctx.totalDiceInPlay * 8) {
-    // Generous sanity ceiling only -- true rules don't cap bids at the dice
-    // count (an "impossible" bid is legal, just a guaranteed loss), but we
-    // still guard against nonsense input from a broken caller/UI.
-    return { valid: false, reason: "Quantity is absurdly high." };
+  if (next.quantity > totalDiceInPlay * 8) {
+    return invalid("Quantity is absurdly high.");
   }
+  return VALID;
+}
 
-  if (ctx.isPalificoRound) {
-    if (previous === null) {
-      // Opening bid of a Palifico round: any face, it becomes the lock.
-      return { valid: true };
-    }
-    if (ctx.palificoFace !== null && next.face !== ctx.palificoFace) {
-      return {
-        valid: false,
-        reason: `Palifico round: all bids must stay on face ${ctx.palificoFace}.`,
-      };
-    }
-    if (next.quantity <= previous.quantity) {
-      return {
-        valid: false,
-        reason: "Palifico round: quantity must strictly increase.",
-      };
-    }
-    return { valid: true };
-  }
-
-  if (previous === null) {
-    return { valid: true };
-  }
+export function isValidNormalRaise(previous: Bid | null, next: Bid, totalDiceInPlay: number): BidValidation {
+  const quantityCheck = checkQuantity(next, totalDiceInPlay);
+  if (!quantityCheck.valid || previous === null) return quantityCheck;
 
   if (previous.face === next.face) {
-    if (next.quantity > previous.quantity) return { valid: true };
-    return { valid: false, reason: "Must raise the quantity or the face." };
+    return next.quantity > previous.quantity ? VALID : invalid("Must raise the quantity or the face.");
   }
 
-  const minQty = minimumNextQuantity(previous.quantity, previous.face, next.face);
-
-  // Same-regime "same quantity, higher face" shortcut (non-ace faces only).
-  if (
-    previous.face !== 1 &&
-    next.face !== 1 &&
-    next.quantity === previous.quantity &&
-    next.face > previous.face
-  ) {
-    return { valid: true };
+  const bothNonAce = previous.face !== 1 && next.face !== 1;
+  if (bothNonAce && next.quantity === previous.quantity && next.face > previous.face) {
+    return VALID;
   }
 
-  if (next.quantity >= minQty) return { valid: true };
+  const minQuantity = minimumNextQuantity(previous.quantity, previous.face, next.face);
+  if (next.quantity >= minQuantity) return VALID;
+  return invalid(`Quantity too low for a switch to face ${next.face} (need at least ${minQuantity}).`);
+}
 
-  return {
-    valid: false,
-    reason: `Quantity too low for a switch to face ${next.face} (need at least ${minQty}).`,
-  };
+/** In a Palifico round the opening bid's face is locked in and only the quantity may rise. */
+export function isValidPalificoRaise(previous: Bid | null, next: Bid, totalDiceInPlay: number): BidValidation {
+  const quantityCheck = checkQuantity(next, totalDiceInPlay);
+  if (!quantityCheck.valid || previous === null) return quantityCheck;
+
+  if (next.face !== previous.face) {
+    return invalid(`Palifico round: all bids must stay on face ${previous.face}.`);
+  }
+  if (next.quantity <= previous.quantity) {
+    return invalid("Palifico round: quantity must strictly increase.");
+  }
+  return VALID;
+}
+
+export function isValidRaise(rules: BiddingRules, next: Bid): BidValidation {
+  const validate = rules.isPalifico ? isValidPalificoRaise : isValidNormalRaise;
+  return validate(rules.currentBid, next, rules.totalDiceInPlay);
 }
 
 /**
- * Enumerates the legal next bids worth considering. Bounded to
- * `totalDiceInPlay + slack` per face so bots aren't reasoning over
- * astronomically improbable quantities -- a rational agent would never want
- * to bid, say, double the dice on the table, so there's no need to generate
- * (let alone evaluate) those candidates.
+ * Every legal next bid with a quantity up to `totalDiceInPlay + slack`,
+ * cheapest raise first.
  */
-export function generateCandidateBids(
-  previous: Bid | null,
-  ctx: BidContext,
-  slack = 3,
-): Bid[] {
-  const faces: Face[] = ctx.isPalificoRound && ctx.palificoFace !== null
-    ? [ctx.palificoFace]
-    : [1, 2, 3, 4, 5, 6];
-  const maxQty = ctx.totalDiceInPlay + slack;
+export function generateCandidateBids(rules: BiddingRules, slack = 3): Bid[] {
+  const lockedFace = rules.isPalifico ? rules.currentBid?.face : undefined;
+  const faces = lockedFace === undefined ? ALL_FACES : [lockedFace];
+  const maxQuantity = rules.totalDiceInPlay + slack;
 
   const candidates: Bid[] = [];
   for (const face of faces) {
-    for (let qty = 1; qty <= maxQty; qty++) {
-      const bid: Bid = { quantity: qty, face };
-      if (isValidRaise(previous, bid, ctx).valid) candidates.push(bid);
+    for (let quantity = 1; quantity <= maxQuantity; quantity++) {
+      const bid: Bid = { quantity, face };
+      if (isValidRaise(rules, bid).valid) candidates.push(bid);
     }
   }
-  // Sort by "cheapest raise first" so callers that want the minimal escalation
-  // can just take candidates[0].
-  candidates.sort((a, b) => a.quantity - b.quantity || a.face - b.face);
-  return candidates;
+  return candidates.sort((a, b) => a.quantity - b.quantity || a.face - b.face);
 }
 
-/** Counts how many dice across `hands` actually satisfy `bid`. */
-export function countActualMatches(
-  hands: Face[][],
-  bid: Bid,
-  onesWild: boolean,
-): number {
+/** How many dice across `hands` count toward `bid`. Outside Palifico, 1s are wild for non-ace bids. */
+export function countActualMatches(hands: readonly (readonly Face[])[], bid: Bid, isPalifico: boolean): number {
   let count = 0;
   for (const hand of hands) {
     for (const die of hand) {
-      if (die === bid.face) count++;
-      else if (onesWild && die === 1 && bid.face !== 1) count++;
+      if (die === bid.face || (!isPalifico && die === 1)) count++;
     }
   }
   return count;

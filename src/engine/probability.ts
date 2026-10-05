@@ -1,71 +1,44 @@
-import type { Bid, Face } from "../types.js";
+import type { Bid } from "../types/bid.js";
+import type { Face } from "../types/face.js";
+import { countActualMatches } from "./bidding.js";
 
-/**
- * Probability that a single *unknown* die counts toward a bid on `face`,
- * given whether 1s are wild this round.
- *  - Palifico (no wilds): any face, including 1 itself, is a 1-in-6 shot.
- *  - Normal rounds, bidding on a non-ace face: the die counts if it shows
- *    that face OR a wild 1 -> 2-in-6.
- *  - Normal rounds, bidding on aces: wildness doesn't apply to the ace bid
- *    itself (a 1 either is or isn't rolled) -> 1-in-6.
- */
-export function perDieHitProbability(face: Face, onesWild: boolean): number {
-  if (!onesWild) return 1 / 6;
-  if (face === 1) return 1 / 6;
-  return 2 / 6;
+/** Chance that a single unseen die counts toward a bid on `face`. */
+export function perDieHitProbability(face: Face, isPalifico: boolean): number {
+  const onesAreWild = !isPalifico && face !== 1;
+  return onesAreWild ? 2 / 6 : 1 / 6;
 }
 
-/** P(X >= k) for X ~ Binomial(n, p). Computed via a stable forward recurrence
- * over the pmf rather than raw factorials, so it stays accurate for the
- * dice counts this game ever sees (well under n=90). */
+/**
+ * Chance of at least `k` successes out of `n` tries, when each try succeeds
+ * with chance `p`. Here: the chance that at least `k` of `n` unseen dice match.
+ */
 export function binomialAtLeast(n: number, p: number, k: number): number {
   if (k <= 0) return 1;
-  if (k > n) return 0;
-  if (p <= 0) return 0;
+  if (k > n || p <= 0) return 0;
   if (p >= 1) return 1;
 
+  // Sum the chances of exactly 0..k-1 successes, then take the complement.
+  // Each "exactly i" term is computed from the previous one to avoid factorials.
   const q = 1 - p;
-  let pmf = Math.pow(q, n); // P(X = 0)
-  let cumulativeBelow = pmf; // sum_{i=0}^{0} pmf(i)
-
+  let exactly = Math.pow(q, n);
+  let fewerThanK = exactly;
   for (let i = 1; i < k; i++) {
-    pmf = (pmf * (n - i + 1) * p) / (i * q);
-    cumulativeBelow += pmf;
+    exactly = (exactly * (n - i + 1) * p) / (i * q);
+    fewerThanK += exactly;
   }
-  const result = 1 - cumulativeBelow;
-  // Guard against floating point drift landing just outside [0,1].
-  return Math.min(1, Math.max(0, result));
+  return Math.min(1, Math.max(0, 1 - fewerThanK));
 }
 
-export interface BidProbabilityInput {
-  /** The dice this player can actually see (their own hand). */
-  knownHand: Face[];
+interface BidProbabilityInput {
+  hand: readonly Face[];
   bid: Bid;
-  /** Count of dice held by every other player still in the round. */
   unknownDiceCount: number;
-  onesWild: boolean;
+  isPalifico: boolean;
 }
 
-/**
- * Estimates P(bid is currently true), i.e. the probability a challenge
- * against `bid` would fail (bidder was right). Assumes unknown dice are
- * i.i.d. uniform, which is exactly true at the start of a round and is the
- * standard simplifying assumption bots use (no card-counting across
- * rounds -- hands are re-rolled every round anyway).
- */
-export function probabilityBidIsTrue(input: BidProbabilityInput): number {
-  const { knownHand, bid, unknownDiceCount, onesWild } = input;
-
-  let ownMatches = 0;
-  for (const die of knownHand) {
-    if (die === bid.face) ownMatches++;
-    else if (onesWild && die === 1 && bid.face !== 1) ownMatches++;
-  }
-
-  const stillNeeded = bid.quantity - ownMatches;
+/** Chance that `bid` is true, given one's own hand and how many dice are hidden. */
+export function probabilityBidIsTrue({ hand, bid, unknownDiceCount, isPalifico }: BidProbabilityInput): number {
+  const stillNeeded = bid.quantity - countActualMatches([hand], bid, isPalifico);
   if (stillNeeded <= 0) return 1;
-  if (unknownDiceCount <= 0) return 0;
-
-  const p = perDieHitProbability(bid.face, onesWild);
-  return binomialAtLeast(unknownDiceCount, p, stillNeeded);
+  return binomialAtLeast(unknownDiceCount, perDieHitProbability(bid.face, isPalifico), stillNeeded);
 }

@@ -1,141 +1,129 @@
 import { describe, it, expect } from "vitest";
-import { GameEngine, IllegalActionError } from "../src/engine/game.js";
-import { seededRng } from "../src/engine/dice.js";
+import { GameEngine } from "../src/engine/gameEngine.js";
+import { IllegalActionError } from "../src/engine/illegalActionError.js";
+import { PalificoDeclared, RoundStarted } from "../src/events/gameEvent.js";
+import { Game } from "../src/models/game.js";
+import { Player } from "../src/models/player.js";
+import { PalificoRound } from "../src/models/round.js";
+import type { Face } from "../src/types/face.js";
 
-describe("GameEngine: challenge resolution", () => {
-  it("makes the challenger lose a die when the bid was actually true", () => {
-    const engine = new GameEngine([
-      { id: "a", name: "A", kind: "bot", forcedHand: [1, 2, 3, 4, 5] },
-      { id: "b", name: "B", kind: "bot", forcedHand: [6, 6, 6, 6, 6] },
-      { id: "c", name: "C", kind: "bot", forcedHand: [2, 2, 2, 2, 2] },
-    ]);
+function setUp(hands: Record<string, Face[]>) {
+  const players = Object.entries(hands).map(([name, dice]) => new Player(name, dice));
+  const game = new Game(players);
+  return { game, engine: new GameEngine(game), players };
+}
 
-    expect(engine.isPlayersTurn("a")).toBe(true);
-    engine.placeBid("a", { quantity: 5, face: 6 });
-    expect(engine.isPlayersTurn("b")).toBe(true);
-    engine.placeBid("b", { quantity: 6, face: 6 });
-    expect(engine.isPlayersTurn("c")).toBe(true);
-
-    // Actual 6s: b has five, plus a's single wild ace = 6 total, so the
-    // quantity-6 bid on 6s is true. Challenging it should cost c a die.
-    engine.challenge("c");
-
-    const snap = engine.getPublicSnapshot();
-    const c = snap.players.find((p) => p.id === "c")!;
-    expect(c.dice.length).toBe(4);
-    expect(snap.lastResolution?.outcome).toBe("bidder-right");
-    expect(snap.lastResolution?.loserId).toBe("c");
-    expect(snap.lastResolution?.actualCount).toBe(6);
-    expect(snap.currentPlayerIndex).toBe(snap.players.findIndex((p) => p.id === "c"));
-    expect(snap.roundNumber).toBe(2);
-    expect(snap.currentBid).toBeNull();
-    expect(snap.phase).toBe("bidding");
-
-    const eventTypes = engine.getEventLog().map((e) => e.type);
-    expect(eventTypes).toContain("challenge");
-    expect(eventTypes).toContain("reveal");
-    expect(eventTypes.filter((t) => t === "round-started")).toHaveLength(2);
+describe("Game", () => {
+  it("rejects too few players and duplicate names", () => {
+    expect(() => new Game([new Player("A", [1])])).toThrow();
+    expect(() => new Game([new Player("A", [1]), new Player("A", [2])])).toThrow();
   });
 
-  it("makes the bidder lose a die when the bid was false", () => {
-    const engine = new GameEngine([
-      { id: "a", name: "A", kind: "bot", forcedHand: [2] },
-      { id: "b", name: "B", kind: "bot", forcedHand: [3] },
-    ]);
-
-    engine.placeBid("a", { quantity: 2, face: 5 }); // impossible: no 5s, no aces at all
-    engine.challenge("b");
-
-    const snap = engine.getPublicSnapshot();
-    expect(snap.lastResolution?.outcome).toBe("bidder-wrong");
-    expect(snap.lastResolution?.loserId).toBe("a");
-    const a = snap.players.find((p) => p.id === "a")!;
-    expect(a.dice.length).toBe(0);
-    expect(a.eliminated).toBe(true);
-    expect(snap.phase).toBe("game-over");
-    expect(snap.winnerId).toBe("b");
+  it("treats a player with no dice as eliminated", () => {
+    const { players } = setUp({ A: [1], B: [2] });
+    players[0]!.loseDie();
+    expect(players[0]!.isEliminated()).toBe(true);
   });
 
-  it("rejects actions taken out of turn or before any bid exists", () => {
-    const engine = new GameEngine([
-      { id: "a", name: "A", kind: "bot", forcedHand: [1, 2, 3, 4, 5] },
-      { id: "b", name: "B", kind: "bot", forcedHand: [1, 2, 3, 4, 5] },
-    ]);
-
-    expect(() => engine.placeBid("b", { quantity: 1, face: 2 })).toThrow(IllegalActionError);
-    expect(() => engine.challenge("a")).toThrow(IllegalActionError);
+  it("throws if every player has been eliminated", () => {
+    const { game, players } = setUp({ A: [1], B: [2] });
+    for (const p of players) p.loseDie();
+    expect(() => game.winner).toThrow();
   });
 });
 
-describe("GameEngine: Palifico lifecycle", () => {
-  it("triggers Palifico when a round's starter has exactly one die, and locks the face", () => {
-    const engine = new GameEngine([
-      { id: "a", name: "A", kind: "bot", forcedHand: [3, 3] },
-      { id: "b", name: "B", kind: "bot", forcedHand: [4, 4] },
-      { id: "c", name: "C", kind: "bot", forcedHand: [2, 2, 2, 2, 2] },
-    ]);
+describe("GameEngine: calling a bid", () => {
+  it("costs the challenger a die when the bid was true", () => {
+    const { game, engine, players } = setUp({ A: [1, 2, 3, 4, 5], B: [6, 6, 6, 6, 6], C: [2, 2, 2, 2, 2] });
+    const [, , c] = players;
+    const firstRound = game.round;
 
-    engine.placeBid("a", { quantity: 1, face: 4 });
-    // b challenges a's bid; actual 4-count is 2 (b's own dice), bid was true,
-    // so challenger b loses a die and drops from 2 -> 1.
-    engine.challenge("b");
+    engine.bid({ quantity: 5, face: 6 });
+    engine.bid({ quantity: 6, face: 6 });
+    expect(game.round.currentPlayer).toBe(c);
+    // Five 6s from B plus A's wild 1.
+    const events = engine.call();
 
-    let snap = engine.getPublicSnapshot();
-    expect(snap.lastResolution?.loserId).toBe("b");
-    expect(snap.players.find((p) => p.id === "b")!.dice.length).toBe(1);
-    expect(snap.isPalificoRound).toBe(true);
-    expect(snap.currentPlayerIndex).toBe(snap.players.findIndex((p) => p.id === "b"));
+    expect(firstRound.resolution?.outcome).toBe("challenger-wrong");
+    expect(firstRound.resolution?.loser).toBe(c);
+    expect(firstRound.resolution?.actualCount).toBe(6);
+    expect(c!.diceCount).toBe(4);
 
-    engine.placeBid("b", { quantity: 1, face: 5 });
-    snap = engine.getPublicSnapshot();
-    expect(snap.palificoFace).toBe(5);
+    expect(game.round.index).toBe(1);
+    expect(game.round.currentPlayer).toBe(c);
+    expect(game.round.currentBid).toBeNull();
+    expect(game.round.phase.name).toBe("opening");
+    expect(events.at(-1)).toBeInstanceOf(RoundStarted);
+  });
 
-    expect(() => engine.placeBid("c", { quantity: 2, face: 6 })).toThrow(IllegalActionError);
-    expect(() => engine.placeBid("c", { quantity: 2, face: 5 })).not.toThrow();
+  it("costs the bidder a die when the bid was false, and ends the game at one survivor", () => {
+    const { game, engine, players } = setUp({ A: [2], B: [3] });
+    const [a, b] = players;
+    const round = game.round;
+
+    engine.bid({ quantity: 2, face: 5 });
+    engine.call();
+
+    expect(round.resolution?.outcome).toBe("challenger-right");
+    expect(round.resolution?.loser).toBe(a);
+    expect(a!.isEliminated()).toBe(true);
+    expect(game.isOver).toBe(true);
+    expect(game.winner).toBe(b);
+    expect(() => engine.bid({ quantity: 1, face: 2 })).toThrow(IllegalActionError);
+  });
+
+  it("starts the next round with the player after the loser when the loser is eliminated", () => {
+    const { game, engine, players } = setUp({ A: [2], B: [3], C: [4, 4] });
+    const [, b, c] = players;
+
+    engine.bid({ quantity: 2, face: 5 });
+    engine.call();
+
+    expect(game.isOver).toBe(false);
+    expect(game.round.currentPlayer).toBe(b);
+    expect(game.round.turnOrder).toEqual([b, c]);
+  });
+
+  it("rejects calling before any bid and illegal raises", () => {
+    const { engine } = setUp({ A: [1, 2, 3, 4, 5], B: [1, 2, 3, 4, 5] });
+    expect(() => engine.call()).toThrow(IllegalActionError);
+    engine.bid({ quantity: 3, face: 4 });
+    expect(() => engine.bid({ quantity: 3, face: 3 })).toThrow(IllegalActionError);
   });
 });
 
-describe("GameEngine: sanity across many randomized games", () => {
-  it("always terminates with exactly one winner and never lets an eliminated player act", () => {
-    for (let seed = 0; seed < 25; seed++) {
-      const rng = seededRng(seed * 7919 + 1);
-      const engine = new GameEngine(
-        [
-          { id: "p1", name: "P1", kind: "bot", personality: "cautious" },
-          { id: "p2", name: "P2", kind: "bot", personality: "aggressive" },
-          { id: "p3", name: "P3", kind: "bot", personality: "unpredictable" },
-        ],
-        rng,
-      );
+describe("GameEngine: Palifico", () => {
+  it("plays a Palifico round when the starter has one die, and locks the opening face", () => {
+    const { game, engine, players } = setUp({ A: [3, 3], B: [4, 4], C: [2, 2, 2, 2, 2] });
+    const [, b] = players;
 
-      let guard = 0;
-      while (engine.getPublicSnapshot().phase !== "game-over") {
-        guard++;
-        if (guard > 5000) throw new Error("Game did not terminate -- possible infinite loop.");
+    engine.bid({ quantity: 1, face: 4 });
+    engine.call(); // B holds two 4s, so B's call is wrong and B drops to one die.
 
-        const snap = engine.getPublicSnapshot();
-        const current = snap.players[snap.currentPlayerIndex]!;
-        expect(current.eliminated).toBe(false);
+    expect(b!.diceCount).toBe(1);
+    expect(game.round).toBeInstanceOf(PalificoRound);
+    expect(game.round.currentPlayer).toBe(b);
 
-        // Simple scripted behavior sufficient for a termination/invariant
-        // check: always challenge once the bid is already implausible given
-        // total dice, otherwise make the cheapest legal raise.
-        if (snap.currentBid && snap.currentBid.quantity > snap.players.reduce((s, p) => s + p.dice.length, 0)) {
-          engine.challenge(current.id);
-          continue;
-        }
-        if (snap.currentBid === null) {
-          engine.placeBid(current.id, { quantity: 1, face: 2 });
-        } else {
-          const face = snap.currentBid.face;
-          engine.placeBid(current.id, { quantity: snap.currentBid.quantity + 1, face });
-        }
-      }
+    const events = engine.bid({ quantity: 1, face: 5 });
+    expect(events[0]).toBeInstanceOf(PalificoDeclared);
+    expect((game.round as PalificoRound).lockedFace).toBe(5);
+    expect(() => engine.bid({ quantity: 2, face: 6 })).toThrow(IllegalActionError);
+    expect(() => engine.bid({ quantity: 2, face: 5 })).not.toThrow();
+  });
+});
 
-      const finalSnap = engine.getPublicSnapshot();
-      const survivors = finalSnap.players.filter((p) => !p.eliminated);
-      expect(survivors).toHaveLength(1);
-      expect(finalSnap.winnerId).toBe(survivors[0]!.id);
-    }
+describe("GameEngine: player view", () => {
+  it("shows the player's own hand, everyone else's dice counts, and the turn order", () => {
+    const { game, engine, players } = setUp({ A: [1, 2], B: [3, 4, 5], C: [6] });
+    const [, b] = players;
+    engine.bid({ quantity: 1, face: 2 });
+
+    const view = engine.viewFor(b!);
+    expect(view.hand).toEqual([3, 4, 5]);
+    expect(view.turnOrder.map((p) => p.name)).toEqual(["B", "C", "A"]);
+    expect(view.turnOrder[1]).toEqual({ name: "C", diceCount: 1 });
+    expect(view.bidHistory).toEqual([{ bidder: { name: "A", diceCount: 2 }, bid: { quantity: 1, face: 2 } }]);
+    expect(view.totalDiceInPlay).toBe(6);
+    expect(game.round.currentPlayer).toBe(b);
   });
 });

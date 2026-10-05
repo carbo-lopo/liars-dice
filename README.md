@@ -1,10 +1,6 @@
 # Liar's Dice — Game Engine & Bot AI (v0.1)
 
-Singleplayer Liar's Dice: you vs. two bots. This first milestone is the
-**gameflow and bot decision-making**, with no visuals yet — everything is
-driven through a text CLI so the rules and the bots can be tuned and felt
-before any UI work starts. See `DESIGN.md` for the full writeup of the rules
-chosen and how the bots think.
+Singleplayer Liar's Dice: you against bots, played in the terminal.
 
 ## Setup
 
@@ -12,62 +8,42 @@ chosen and how the bots think.
 npm install
 ```
 
-## Play it (human vs. 2 bots, in your terminal)
+## Play
 
 ```
-npm run play
+npm run play          # you + 2 bots
+npm run play -- 5     # 2 to 8 players in total, including you
 ```
 
 Type `bid <quantity> <face>` (e.g. `bid 4 5`) to raise, or `call` to call
 liar on the current bid.
 
-## Run the automated tests
+## Test
 
 ```
 npm test
 ```
 
-31 tests cover the bidding rules (including the wild-ace transition math and
-Palifico locking), the probability engine, full game lifecycle (challenge
-resolution, elimination, Palifico triggering, win condition), and bot
-legality/differentiation.
-
-## Run the bot-vs-bot simulation
-
-```
-npm run sim            # 500 games by default
-npm run sim -- 2000    # or specify a game count
-```
-
-Prints win rates, average game length, challenge accuracy, and an
-aggression proxy (average bid quantity) per personality — the sanity check
-that the bots are competitive and actually play differently from each
-other, not just a coin flip with extra steps.
+Covers bidding rules (wild-ace transitions, Palifico locking), the
+probability estimates, game lifecycle (calls, elimination, Palifico, turn
+order, winning), CLI input parsing, bot legality and differentiation, and
+full bot-vs-bot games at several table sizes.
 
 ## Project layout
 
 ```
 src/
-  types.ts              Shared types (Bid, Player, GameState, events, ...)
-  engine/
-    dice.ts              Rolling + a seedable RNG for reproducible tests/sims
-    bidding.ts           Bid legality, wild-ace transitions, Palifico locking
-    probability.ts       Binomial estimate of "is this bid true?"
-    game.ts              GameEngine — the full round/game state machine
+  types/        Shared types and constants (Bid, PlayerView, BotStrategy, ...)
+  models/       Game state: Player, Round (Normal / Palifico), Phase, Game
+  events/       GameEvent classes, each able to format itself as narration
+  engine/       Rules and logic: GameEngine, bidding, dice, probability
   bots/
-    personality.ts       Tunable cautious / aggressive / unpredictable profiles
-    botPlayer.ts          decideBotAction(): raise, bluff, or call liar
-  cli/
-    play.ts              Text CLI: human vs. 2 bots
-  sim/
-    simulate.ts           Bot-vs-bot simulation harness
-tests/                   Vitest suite
+    candidates.ts      Shared bot helpers: scoring and choosing bids
+    personalities/     One BotStrategy class per bot personality
+    roster.ts          The strategies available to the CLI
+  cli/          Terminal game: main loop, input parsing, rendering, options
+tests/          Vitest suite, including full-game integration tests
 ```
 
-## What's next
-
-Visuals and animation — the engine emits a structured `GameEvent` log
-(`bid-placed`, `challenge`, `reveal`, `palifico-declared`, `player-eliminated`,
-`game-over`, ...) specifically so a future UI layer can drive
-animations/narration straight off of it without re-deriving "what just
-happened" from state diffs.
+To add a bot personality, add a class implementing `BotStrategy` under
+`src/bots/personalities/` and list it in `src/bots/roster.ts`.
