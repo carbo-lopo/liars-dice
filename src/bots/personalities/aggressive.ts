@@ -9,7 +9,7 @@ const TOLERANCE: RiskTolerance = {
   bluffChance: 0.45,
   bluffBoldness: 3,
   callThreshold: 0.25,
-  nerve: 0.35,
+  chanceToRaiseInsteadOfCalling: 0.35,
 };
 
 const JITTER = 0.05;

@@ -17,7 +17,7 @@ export interface RiskTolerance {
   /** The bot considers calling when the current bid's chance of being true is below this. */
   callThreshold: number;
   /** Chance the bot raises anyway when it doubts the current bid. */
-  nerve: number;
+  chanceToRaiseInsteadOfCalling: number;
 }
 
 interface ScoredBid {
@@ -34,7 +34,7 @@ export function jitter(tolerance: RiskTolerance, amount: number): RiskTolerance 
     bluffChance: nudge(tolerance.bluffChance),
     bluffBoldness: tolerance.bluffBoldness,
     callThreshold: nudge(tolerance.callThreshold),
-    nerve: nudge(tolerance.nerve),
+    chanceToRaiseInsteadOfCalling: nudge(tolerance.chanceToRaiseInsteadOfCalling),
   };
 }
 
@@ -51,7 +51,7 @@ function chanceTrue(view: PlayerView, bid: Bid): number {
 export function wantsToCall(view: PlayerView, tolerance: RiskTolerance): boolean {
   if (view.currentBid === null) return false;
   const doubtful = chanceTrue(view, view.currentBid) < tolerance.callThreshold;
-  return doubtful && Math.random() >= tolerance.nerve;
+  return doubtful && Math.random() >= tolerance.chanceToRaiseInsteadOfCalling;
 }
 
 /** The face the hand best supports, counting wild 1s when they apply. Ties go to the lowest non-ace face. */
