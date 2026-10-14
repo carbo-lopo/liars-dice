@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { BOT_STRATEGIES } from "../src/bots/roster.js";
 import { GameEngine } from "../src/engine/gameEngine.js";
 import type { Game } from "../src/models/game.js";
+import { seedMathRandom } from "./helpers/seedMathRandom.js";
 
 const MAX_TURNS = 5000;
 
@@ -16,6 +17,8 @@ function playToCompletion(engine: GameEngine, chooseMove: (engine: GameEngine) =
 }
 
 describe("full games", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it("always end with exactly one survivor under scripted play", () => {
     for (let g = 0; g < 25; g++) {
       const engine = GameEngine.start([
@@ -34,6 +37,7 @@ describe("full games", () => {
   });
 
   it("are competitive between every bot strategy, at every supported table size", () => {
+    seedMathRandom(20261014);
     const wins = new Map<string, number>(BOT_STRATEGIES.map((s) => [s.id, 0]));
     const gamesPerSize = 150;
 

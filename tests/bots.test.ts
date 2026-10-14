@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { BOT_STRATEGIES } from "../src/bots/roster.js";
 import { generateCandidateBids, isValidRaise } from "../src/engine/bidding.js";
 import { rollHand } from "../src/engine/dice.js";
@@ -6,6 +6,7 @@ import type { Bid } from "../src/types/bid.js";
 import type { BotStrategy } from "../src/types/botStrategy.js";
 import type { Face } from "../src/types/face.js";
 import type { PlayerView } from "../src/types/playerView.js";
+import { seedMathRandom } from "./helpers/seedMathRandom.js";
 
 function makeView(opts: { hand: Face[]; totalDice: number; currentBid?: Bid | null; isPalifico?: boolean }): PlayerView {
   const { hand, totalDice, currentBid = null, isPalifico = false } = opts;
@@ -59,8 +60,11 @@ describe.each(BOT_STRATEGIES.map((s) => [s.id, s] as const))("%s bot", (_id, bot
 });
 
 describe("bot strategies are differentiated", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it("aggressive bots open with higher quantities on average than cautious bots", () => {
     const averageOpening = (bot: BotStrategy) => {
+      seedMathRandom(999);
       const trials = 2000;
       let sum = 0;
       for (let i = 0; i < trials; i++) {
