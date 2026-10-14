@@ -32,6 +32,19 @@ describe("Game", () => {
   });
 });
 
+describe("GameEngine.start", () => {
+  it("rejects a starting dice count that is not a positive whole number", () => {
+    const seats = [
+      { name: "A", strategy: null },
+      { name: "B", strategy: null },
+    ];
+    for (const startingDice of [0, -1, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => GameEngine.start(seats, startingDice)).toThrow(RangeError);
+    }
+    expect(GameEngine.start(seats, 1).game.round.totalDice).toBe(2);
+  });
+});
+
 describe("GameEngine: calling a bid", () => {
   it("costs the challenger a die when the bid was true", () => {
     const { game, engine, players } = setUp({ A: [1, 2, 3, 4, 5], B: [6, 6, 6, 6, 6], C: [2, 2, 2, 2, 2] });

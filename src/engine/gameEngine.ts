@@ -36,6 +36,9 @@ export class GameEngine {
 
   /** Seats players in the given order, rolls their hands, and opens the first round. */
   static start(seats: readonly Seat[], startingDice = STARTING_DICE): GameEngine {
+    if (!Number.isInteger(startingDice) || startingDice < 1) {
+      throw new RangeError(`Starting dice must be a positive whole number (got ${startingDice}).`);
+    }
     const players = seats.map((s) => new Player(s.name, rollHand(startingDice), s.strategy));
     const game = new Game(players);
     game.events.push(new GameStarted(players), new RoundStarted(0, game.round.turnOrder));
