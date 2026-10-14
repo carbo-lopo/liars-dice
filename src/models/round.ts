@@ -1,7 +1,7 @@
 import { countActualMatches, isValidNormalRaise, isValidPalificoRaise, type BidValidation } from "../engine/bidding.js";
 import { IllegalActionError } from "../engine/illegalActionError.js";
 import type { Bid } from "../types/bid.js";
-import type { BidRecord } from "../types/bidRecord.js";
+import type { BidRecord } from "./bidRecord.js";
 import type { Face } from "../types/face.js";
 import { ChallengeResolution } from "./challengeResolution.js";
 import { BiddingPhase, CalledPhase, OpeningPhase, type ActionType, type Phase } from "./phase.js";
