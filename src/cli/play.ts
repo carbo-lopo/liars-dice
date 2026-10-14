@@ -6,7 +6,7 @@ import type { Player } from "../models/player.js";
 import type { BotStrategy } from "../types/botStrategy.js";
 import type { PlayerAction } from "../types/playerAction.js";
 import { buildSeats, parsePlayerCount } from "./options.js";
-import { Prompt } from "./input.js";
+import { InputClosedError, Prompt } from "./input.js";
 import { printEvents, printTurnPrompt } from "./render.js";
 
 function apply(engine: GameEngine, action: PlayerAction): GameEvent[] {
@@ -62,6 +62,10 @@ async function main(prompt: Prompt): Promise<void> {
 const prompt = new Prompt();
 main(prompt)
   .catch((err) => {
+    if (err instanceof InputClosedError) {
+      console.log("\nInput closed; ending the game.");
+      return;
+    }
     console.error(err instanceof RangeError ? err.message : err);
     process.exitCode = 1;
   })

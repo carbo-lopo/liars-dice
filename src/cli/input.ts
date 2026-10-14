@@ -1,4 +1,5 @@
-import { createInterface } from "node:readline/promises";
+import { createInterface, type Interface } from "node:readline";
+import type { Readable, Writable } from "node:stream";
 import { ALL_FACES, type Face } from "../types/face.js";
 import type { PlayerAction } from "../types/playerAction.js";
 
@@ -24,22 +25,49 @@ export function parseAction(raw: string): ParseResult {
   return { ok: true, action: { type: "bid", bid: { quantity, face: face as Face } } };
 }
 
+export class InputClosedError extends Error {
+  constructor() {
+    super("Input closed.");
+  }
+}
+
+/**
+ * Reads moves and pauses from one queued line reader, so lines typed or
+ * pasted ahead of a prompt are kept for the next read instead of dropped.
+ */
 export class Prompt {
-  private readonly rl = createInterface({ input: process.stdin, output: process.stdout });
+  private readonly rl: Interface;
+  private readonly lines: AsyncIterator<string>;
+
+  constructor(
+    input: Readable = process.stdin,
+    private readonly output: Writable = process.stdout,
+  ) {
+    this.rl = createInterface({ input, output });
+    this.lines = this.rl[Symbol.asyncIterator]();
+  }
 
   async readAction(): Promise<PlayerAction> {
     while (true) {
-      const result = parseAction(await this.rl.question('Your move ("bid <qty> <face>" or "call"): '));
+      const result = parseAction(await this.nextLine('Your move ("bid <qty> <face>" or "call"): '));
       if (result.ok) return result.action;
-      console.log(result.error);
+      this.output.write(`${result.error}\n`);
     }
   }
 
   async pause(): Promise<void> {
-    await this.rl.question("\n(press Enter to continue) ");
+    await this.nextLine("\n(press Enter to continue) ");
   }
 
   close(): void {
     this.rl.close();
+  }
+
+  private async nextLine(prompt: string): Promise<string> {
+    this.rl.setPrompt(prompt);
+    this.rl.prompt();
+    const { value, done } = await this.lines.next();
+    if (done) throw new InputClosedError();
+    return value;
   }
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { parseAction } from "../src/cli/input.js";
+import { PassThrough } from "node:stream";
+import { InputClosedError, parseAction, Prompt } from "../src/cli/input.js";
 import { buildSeats, parsePlayerCount } from "../src/cli/options.js";
 
 describe("parseAction", () => {
@@ -35,5 +36,31 @@ describe("player count", () => {
     const seats = buildSeats(4);
     expect(seats.map((s) => s.name)).toEqual(["Cora", "You", "Duke", "Ezra"]);
     expect(seats.map((s) => s.strategy?.id ?? null)).toEqual(["cautious", null, "aggressive", "unpredictable"]);
+  });
+});
+
+describe("Prompt", () => {
+  function makePrompt() {
+    const input = new PassThrough();
+    const prompt = new Prompt(input, new PassThrough());
+    return { input, prompt };
+  }
+
+  it("keeps lines that arrive together instead of dropping the later ones", async () => {
+    const { input, prompt } = makePrompt();
+    input.write("invalid\ncall\n\nbid 3 4\n");
+
+    await expect(prompt.readAction()).resolves.toEqual({ type: "call" });
+    await prompt.pause();
+    await expect(prompt.readAction()).resolves.toEqual({ type: "bid", bid: { quantity: 3, face: 4 } });
+    prompt.close();
+  });
+
+  it("reports end of input instead of waiting forever", async () => {
+    const { input, prompt } = makePrompt();
+    input.end("bid 4\n");
+
+    await expect(prompt.readAction()).rejects.toBeInstanceOf(InputClosedError);
+    prompt.close();
   });
 });
