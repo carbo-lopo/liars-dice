@@ -39,7 +39,7 @@ src/
   engine/       Rules and logic: GameEngine, bidding, dice, probability
   bots/
     matrix/            Bots driven by a fixed RiskTolerance ("matrix" bots):
-                         AbstractMatrixStrategy, shared tactics, one class per personality
+                         AbstractMatrixStrategy (shared logic) and one class per personality
     roster.ts          The strategies available to the CLI
   cli/          Terminal game: main loop, input parsing, rendering, options
 tests/          Vitest suite, including full-game integration tests

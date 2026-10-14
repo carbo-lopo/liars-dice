@@ -1,5 +1,4 @@
-import { AbstractMatrixStrategy } from "./matrixStrategy.js";
-import type { RiskTolerance } from "./matrixTactics.js";
+import { AbstractMatrixStrategy, type RiskTolerance } from "./matrixStrategy.js";
 
 export class AggressiveMatrixBot extends AbstractMatrixStrategy {
   readonly id = "aggressive";
