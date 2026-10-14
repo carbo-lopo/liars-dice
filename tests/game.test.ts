@@ -93,7 +93,7 @@ describe("GameEngine: calling a bid", () => {
 });
 
 describe("GameEngine: Palifico", () => {
-  it("plays a Palifico round when the starter has one die, and locks the opening face", () => {
+  it("plays a Palifico round when the loser drops to one die, and locks the opening face", () => {
     const { game, engine, players } = setUp({ A: [3, 3], B: [4, 4], C: [2, 2, 2, 2, 2] });
     const [, b] = players;
 
@@ -109,6 +109,18 @@ describe("GameEngine: Palifico", () => {
     expect((game.round as PalificoRound).lockedFace).toBe(5);
     expect(() => engine.bid({ quantity: 2, face: 6 })).toThrow(IllegalActionError);
     expect(() => engine.bid({ quantity: 2, face: 5 })).not.toThrow();
+  });
+
+  it("does not give a one-die player a Palifico round just for starting after an elimination", () => {
+    const { game, engine, players } = setUp({ A: [2], B: [3], C: [4, 4] });
+    const [, b] = players;
+
+    engine.bid({ quantity: 2, face: 5 });
+    engine.call(); // A's bid was false, so A is eliminated and B, already on one die, starts.
+
+    expect(game.round.currentPlayer).toBe(b);
+    expect(b!.diceCount).toBe(1);
+    expect(game.round.isPalifico).toBe(false);
   });
 });
 

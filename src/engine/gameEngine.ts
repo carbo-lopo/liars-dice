@@ -11,7 +11,7 @@ import {
 } from "../events/gameEvent.js";
 import { Game } from "../models/game.js";
 import { Player } from "../models/player.js";
-import { NormalRound, PalificoRound } from "../models/round.js";
+import { NormalRound, PalificoRound, type Round } from "../models/round.js";
 import type { Bid } from "../types/bid.js";
 import type { BotStrategy } from "../types/botStrategy.js";
 import { STARTING_DICE } from "../types/constants.js";
@@ -75,7 +75,7 @@ export class GameEngine {
     if (winner) {
       emitted.push(new GameOver(winner));
     } else {
-      emitted.push(this.startNextRound(round.nextStarter()));
+      emitted.push(this.startNextRound(round));
     }
     return this.record(emitted);
   }
@@ -95,7 +95,8 @@ export class GameEngine {
     };
   }
 
-  private startNextRound(starter: Player): RoundStarted {
+  private startNextRound(previous: Round): RoundStarted {
+    const starter = previous.nextStarter();
     const active = this.game.activePlayers;
     for (const player of active) player.dice = rollHand(player.diceCount);
 
@@ -103,7 +104,7 @@ export class GameEngine {
     const turnOrder = [...active.slice(starterIndex), ...active.slice(0, starterIndex)];
     const index = this.game.round.index + 1;
     this.game.round =
-      starter.diceCount === 1 ? new PalificoRound(index, turnOrder) : new NormalRound(index, turnOrder);
+      previous.nextIsPalifico() ? new PalificoRound(index, turnOrder) : new NormalRound(index, turnOrder);
     return new RoundStarted(index, turnOrder);
   }
 

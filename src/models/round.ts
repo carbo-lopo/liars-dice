@@ -96,6 +96,16 @@ export abstract class Round {
     throw new Error("Every player has been eliminated.");
   }
 
+  /**
+   * Whether the next round is a Palifico round: this round's loser survived
+   * with exactly one die. Dice are never regained, so this happens at most
+   * once per player.
+   */
+  nextIsPalifico(): boolean {
+    if (!this.result) throw new Error("The round has not been called yet.");
+    return this.result.loser.diceCount === 1;
+  }
+
   protected abstract validateBid(bid: Bid): BidValidation;
 
   private assertAllowed(action: ActionType): void {
