@@ -1,8 +1,8 @@
-import { generateCandidateBids } from "../engine/bidding.js";
-import { probabilityBidIsTrue } from "../engine/probability.js";
-import type { Bid } from "../types/bid.js";
-import { ALL_FACES, type Face } from "../types/face.js";
-import type { PlayerView } from "../types/playerView.js";
+import { generateCandidateBids } from "../../engine/bidding.js";
+import { probabilityBidIsTrue } from "../../engine/probability.js";
+import type { Bid } from "../../types/bid.js";
+import { ALL_FACES, type Face } from "../../types/face.js";
+import type { PlayerView } from "../../types/playerView.js";
 
 /** How much risk a bot accepts. Every field except `bluffBoldness` is a probability from 0 to 1. */
 export interface RiskTolerance {

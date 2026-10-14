@@ -38,12 +38,13 @@ src/
   events/       GameEvent classes, each able to format itself as narration
   engine/       Rules and logic: GameEngine, bidding, dice, probability
   bots/
-    candidates.ts      Shared bot helpers: scoring and choosing bids
-    personalities/     One BotStrategy class per bot personality
+    matrix/            Bots driven by a fixed RiskTolerance ("matrix" bots):
+                         AbstractMatrixStrategy, shared tactics, one class per personality
     roster.ts          The strategies available to the CLI
   cli/          Terminal game: main loop, input parsing, rendering, options
 tests/          Vitest suite, including full-game integration tests
 ```
 
-To add a bot personality, add a class implementing `BotStrategy` under
-`src/bots/personalities/` and list it in `src/bots/roster.ts`.
+To add a matrix bot, extend `AbstractMatrixStrategy` with new tolerance
+values. A different style of bot can implement `BotStrategy` directly. Either
+way, list it in `src/bots/roster.ts`.
