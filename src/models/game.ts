@@ -1,10 +1,8 @@
-import type { GameEvent } from "../events/gameEvent.js";
 import { MIN_PLAYERS } from "../types/constants.js";
 import type { Player } from "./player.js";
 import { NormalRound, type Round } from "./round.js";
 
 export class Game {
-  readonly events: GameEvent[] = [];
   round: Round;
 
   /**

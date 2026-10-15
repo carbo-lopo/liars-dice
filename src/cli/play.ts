@@ -43,7 +43,7 @@ async function main(prompt: Prompt): Promise<void> {
 
   console.log("=== Liar's Dice ===");
   console.log(game.players.map((p) => (p.strategy ? `${p.name} (${p.strategy.label})` : p.name)).join(", "));
-  printEvents(game.events, human);
+  printEvents(engine.events, human);
 
   // Bot moves before the human's first turn don't need a pause; there's nothing to have missed yet.
   let humanHasActed = false;

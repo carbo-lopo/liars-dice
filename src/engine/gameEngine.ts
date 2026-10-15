@@ -32,6 +32,9 @@ function publicStateOf(player: Player): PublicPlayerState {
 
 /** Applies moves to a Game on behalf of whoever's turn it is, and records what happened. */
 export class GameEngine {
+  /** Every event this engine has produced, oldest first. */
+  readonly events: GameEvent[] = [];
+
   constructor(readonly game: Game) {}
 
   /** Seats players in the given order, rolls their hands, and opens the first round. */
@@ -40,9 +43,9 @@ export class GameEngine {
       throw new RangeError(`Starting dice must be a positive whole number (got ${startingDice}).`);
     }
     const players = seats.map((s) => new Player(s.name, rollHand(startingDice), s.strategy));
-    const game = new Game(players);
-    game.events.push(new GameStarted(players), new RoundStarted(0, game.round.turnOrder));
-    return new GameEngine(game);
+    const engine = new GameEngine(new Game(players));
+    engine.record([new GameStarted(players), new RoundStarted(0, engine.game.round.turnOrder)]);
+    return engine;
   }
 
   /** The current player raises to `bid`. */
@@ -116,7 +119,7 @@ export class GameEngine {
   }
 
   private record(events: GameEvent[]): GameEvent[] {
-    this.game.events.push(...events);
+    this.events.push(...events);
     return events;
   }
 }
