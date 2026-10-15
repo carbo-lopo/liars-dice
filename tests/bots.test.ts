@@ -1,6 +1,6 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
 import { BOT_STRATEGIES } from "../src/bots/roster.js";
-import { generateCandidateBids, isValidRaise } from "../src/engine/bidding.js";
+import { generateCandidateBids, isValidRaise } from "../src/rules/bidding.js";
 import { rollHand } from "../src/engine/dice.js";
 import type { Bid } from "../src/types/bid.js";
 import type { BotStrategy } from "../src/types/botStrategy.js";

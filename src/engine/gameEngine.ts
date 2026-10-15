@@ -18,7 +18,7 @@ import { STARTING_DICE } from "../types/constants.js";
 import type { PlayerView } from "../types/playerView.js";
 import type { PublicPlayerState } from "../types/publicPlayerState.js";
 import { rollHand } from "./dice.js";
-import { IllegalActionError } from "./illegalActionError.js";
+import { IllegalActionError } from "../rules/illegalActionError.js";
 
 export interface Seat {
   name: string;

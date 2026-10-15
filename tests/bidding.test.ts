@@ -4,8 +4,8 @@ import {
   minimumNextQuantity,
   countActualMatches,
   generateCandidateBids,
-} from "../src/engine/bidding.js";
-import type { BiddingRules } from "../src/engine/bidding.js";
+} from "../src/rules/bidding.js";
+import type { BiddingRules } from "../src/rules/bidding.js";
 import type { Bid } from "../src/types/bid.js";
 import type { Face } from "../src/types/face.js";
 

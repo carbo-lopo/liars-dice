@@ -36,7 +36,8 @@ src/
   types/        Shared types and constants (Bid, PlayerView, BotStrategy, ...)
   models/       Game state: Player, Round (Normal / Palifico), Phase, Game
   events/       GameEvent classes, each able to format itself as narration
-  engine/       Rules and logic: GameEngine, bidding, dice, probability
+  rules/        Pure rule logic: bid legality, dice matching, probability, IllegalActionError
+  engine/       GameEngine (applies moves to a Game) and dice rolling
   bots/
     matrix/            Bots driven by a fixed RiskTolerance ("matrix" bots):
                          AbstractMatrixStrategy (shared logic) and one class per personality

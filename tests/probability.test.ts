@@ -3,7 +3,7 @@ import {
   perDieHitProbability,
   binomialAtLeast,
   probabilityBidIsTrue,
-} from "../src/engine/probability.js";
+} from "../src/rules/probability.js";
 
 describe("perDieHitProbability", () => {
   it("is 2/6 for a non-ace face outside Palifico", () => {

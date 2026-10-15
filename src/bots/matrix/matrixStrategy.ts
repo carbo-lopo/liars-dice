@@ -1,5 +1,5 @@
-import { generateCandidateBids } from "../../engine/bidding.js";
-import { probabilityBidIsTrue } from "../../engine/probability.js";
+import { generateCandidateBids } from "../../rules/bidding.js";
+import { probabilityBidIsTrue } from "../../rules/probability.js";
 import type { Bid } from "../../types/bid.js";
 import type { BotStrategy } from "../../types/botStrategy.js";
 import { ALL_FACES, type Face } from "../../types/face.js";

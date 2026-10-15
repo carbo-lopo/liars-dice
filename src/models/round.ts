@@ -1,5 +1,5 @@
-import { countActualMatches, isValidNormalRaise, isValidPalificoRaise, type BidValidation } from "../engine/bidding.js";
-import { IllegalActionError } from "../engine/illegalActionError.js";
+import { countActualMatches, isValidNormalRaise, isValidPalificoRaise, type BidValidation } from "../rules/bidding.js";
+import { IllegalActionError } from "../rules/illegalActionError.js";
 import type { Bid } from "../types/bid.js";
 import type { BidRecord } from "./bidRecord.js";
 import type { Face } from "../types/face.js";

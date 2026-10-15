@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { GameEngine } from "../engine/gameEngine.js";
-import { IllegalActionError } from "../engine/illegalActionError.js";
+import { IllegalActionError } from "../rules/illegalActionError.js";
 import type { GameEvent } from "../events/gameEvent.js";
 import type { Player } from "../models/player.js";
 import type { BotStrategy } from "../types/botStrategy.js";

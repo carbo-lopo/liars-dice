@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GameEngine } from "../src/engine/gameEngine.js";
-import { IllegalActionError } from "../src/engine/illegalActionError.js";
+import { IllegalActionError } from "../src/rules/illegalActionError.js";
 import { PalificoDeclared, RoundStarted } from "../src/events/gameEvent.js";
 import { Game } from "../src/models/game.js";
 import { Player } from "../src/models/player.js";
