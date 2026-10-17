@@ -8,6 +8,11 @@ function conjugate(player: Player, action: string): string {
   return player.isHuman ? action : `${action}s`;
 }
 
+/** Possessive form of the player: "your" for the human, "Cora's" for a bot. */
+function possessive(player: Player): string {
+  return player.isHuman ? "your" : `${player.name}'s`;
+}
+
 function formatBid(bid: Bid): string {
   return `${bid.quantity} x [${bid.face}]`;
 }
@@ -84,7 +89,7 @@ export class LiarCalled extends GameEvent {
   }
 
   format(): string {
-    return `\n${this.challenger.name} ${conjugate(this.challenger, "call")} LIAR on ${this.bidder.name}'s bid of ${formatBid(this.bid)}!`;
+    return `\n${this.challenger.name} ${conjugate(this.challenger, "call")} LIAR on ${possessive(this.bidder)} bid of ${formatBid(this.bid)}!`;
   }
 }
 
