@@ -92,10 +92,10 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
               <PalificoIcon size={36} />
             </div>
             <p style={{ ...paragraphStyle, margin: 0 }}>
-              When a player starts their turn with exactly one die left, that round becomes a Palifico round: Aces
+              When a player loses a die and is left with exactly one, the next round is a Palifico round: Aces
               stop being wild, and every bid that round must stay on whatever face the opening bid used; only the
-              quantity can rise. This round will be indicated by a Palifico icon on the top of the screen. 
-              The next round will return to normal rules.
+              quantity can rise. A Palifico icon at the top of the screen marks the round. Rounds after that are
+              normal unless another player drops to one die, which starts another Palifico round.
             </p>
           </div>
         </RuleSection>
