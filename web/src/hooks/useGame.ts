@@ -34,14 +34,28 @@ export interface UseGameApi {
   isYourTurn: boolean;
   /** A bot has already acted and is waiting on the player to acknowledge it. */
   awaitingContinue: boolean;
+  /** Name of the bot currently deciding its move, if any. */
+  thinkingBot: string | null;
+  /** The latest bid was just placed and is still being typed out on screen. */
+  typingBid: boolean;
   resolution: ChallengeResolution | null;
   result: GameResult | null;
   error: string | null;
   placeBid: (bid: Bid) => void;
   call: () => void;
   continueAfterBotAction: () => void;
+  /** Called by the UI once the latest bid has finished typing out. */
+  finishTyping: () => void;
   continueAfterReveal: () => void;
   playAgain: () => void;
+}
+
+/** How long a bot appears to think before moving, in milliseconds. */
+const THINKING_MIN_MS = 1000;
+const THINKING_MAX_MS = 1700;
+
+function thinkingDelay(): number {
+  return THINKING_MIN_MS + Math.random() * (THINKING_MAX_MS - THINKING_MIN_MS);
 }
 
 function createEngine(): GameEngine {
@@ -65,6 +79,8 @@ export function useGame(): UseGameApi {
   const [pendingGameOver, setPendingGameOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [awaitingContinue, setAwaitingContinue] = useState(false);
+  const [thinkingBot, setThinkingBot] = useState<string | null>(null);
+  const [typingBid, setTypingBid] = useState(false);
 
   // Guards the bot-turn effect against acting twice on the same game state,
   // e.g. React StrictMode running effects twice in development.
@@ -98,13 +114,28 @@ export function useGame(): UseGameApi {
     [handleEvents, bump],
   );
 
-  const placeBid = useCallback((bid: Bid) => humanAction((engine) => engine.bid(bid)), [humanAction]);
+  const placeBid = useCallback(
+    (bid: Bid) =>
+      humanAction((engine) => {
+        const events = engine.bid(bid);
+        setTypingBid(true);
+        return events;
+      }),
+    [humanAction],
+  );
   const call = useCallback(() => humanAction((engine) => engine.call()), [humanAction]);
 
   const continueAfterBotAction = useCallback(() => {
     setAwaitingContinue(false);
     bump();
   }, [bump]);
+
+  const finishTyping = useCallback(() => {
+    const bidder = engineRef.current.game.round.bidHistory.at(-1)?.bidder;
+    setTypingBid(false);
+    // A bot's bid waits for "Continue"; after the player's own bid the next bot starts thinking.
+    if (bidder && !bidder.isHuman) setAwaitingContinue(true);
+  }, []);
 
   const continueAfterReveal = useCallback(() => {
     setResolution(null);
@@ -120,15 +151,18 @@ export function useGame(): UseGameApi {
     setPendingGameOver(false);
     setError(null);
     setAwaitingContinue(false);
+    setThinkingBot(null);
+    setTypingBid(false);
     setScreen("main");
     bump();
   }, [bump]);
 
   // Runs exactly one bot move whenever it's a bot's turn on the main screen and
-  // the player isn't being asked to continue. The player sets the pace: a bot bid
-  // waits for "Continue", and a bot call goes to the reveal screen.
+  // nothing is waiting on the player. The bot "thinks" for a short delay first.
+  // A bot bid is then typed out by the UI, which calls finishTyping; a bot call
+  // goes straight to the reveal screen.
   useEffect(() => {
-    if (screen !== "main" || awaitingContinue) return;
+    if (screen !== "main" || awaitingContinue || typingBid) return;
     const engine = engineRef.current;
     const { game } = engine;
     if (game.isOver) return;
@@ -140,19 +174,35 @@ export function useGame(): UseGameApi {
     if (lastActedSignatureRef.current === signature) return;
     lastActedSignatureRef.current = signature;
 
-    const view = engine.viewFor(bot);
-    let events: GameEvent[];
-    try {
-      events = apply(engine, bot.strategy.decide(view));
-    } catch (err) {
-      // Bots are tested to only make legal moves; if one slips through, call rather than stall the game.
-      if (err instanceof IllegalActionError && view.currentBid) events = engine.call();
-      else throw err;
-    }
-    handleEvents(events);
-    if (!events.some((e) => e instanceof DiceRevealed)) setAwaitingContinue(true);
-    bump();
-  }, [screen, awaitingContinue, version, handleEvents, bump]);
+    setThinkingBot(bot.name);
+    let moved = false;
+    const timer = window.setTimeout(() => {
+      moved = true;
+      setThinkingBot(null);
+      const view = engine.viewFor(bot);
+      let events: GameEvent[];
+      try {
+        events = apply(engine, bot.strategy!.decide(view));
+      } catch (err) {
+        // Bots are tested to only make legal moves; if one slips through, call rather than stall the game.
+        if (err instanceof IllegalActionError && view.currentBid) events = engine.call();
+        else throw err;
+      }
+      handleEvents(events);
+      if (!events.some((e) => e instanceof DiceRevealed)) setTypingBid(true);
+      bump();
+    }, thinkingDelay());
+
+    return () => {
+      window.clearTimeout(timer);
+      // A move cancelled before it happened (unmount, StrictMode's test cleanup)
+      // must be allowed to run again on the next pass.
+      if (!moved && lastActedSignatureRef.current === signature) {
+        lastActedSignatureRef.current = null;
+        setThinkingBot(null);
+      }
+    };
+  }, [screen, awaitingContinue, typingBid, version, handleEvents, bump]);
 
   const { game } = engineRef.current;
   const human = game.players.find((p) => p.isHuman)!;
@@ -183,7 +233,7 @@ export function useGame(): UseGameApi {
       }
     : null;
 
-  const isYourTurn = !game.isOver && game.round.currentPlayer.isHuman && !awaitingContinue;
+  const isYourTurn = !game.isOver && game.round.currentPlayer.isHuman && !awaitingContinue && !typingBid;
 
   return {
     view,
@@ -191,12 +241,15 @@ export function useGame(): UseGameApi {
     screen,
     isYourTurn,
     awaitingContinue,
+    thinkingBot,
+    typingBid,
     resolution,
     result,
     error,
     placeBid,
     call,
     continueAfterBotAction,
+    finishTyping,
     continueAfterReveal,
     playAgain,
   };

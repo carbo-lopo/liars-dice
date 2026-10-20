@@ -22,10 +22,13 @@ export interface MainScreenProps {
   opponents: OpponentSeat[];
   isYourTurn: boolean;
   awaitingContinue: boolean;
+  thinkingBot: string | null;
+  typingBid: boolean;
   error: string | null;
   onPlaceBid: (bid: { quantity: number; face: Face }) => void;
   onCall: () => void;
   onContinueBotAction: () => void;
+  onBidTyped: () => void;
   onQuit: () => void;
   onRules: () => void;
 }
@@ -35,18 +38,23 @@ export function MainScreen({
   opponents,
   isYourTurn,
   awaitingContinue,
+  thinkingBot,
+  typingBid,
   error,
   onPlaceBid,
   onCall,
   onContinueBotAction,
+  onBidTyped,
   onQuit,
   onRules,
 }: MainScreenProps) {
   const [selectedFace, setSelectedFace] = useState<Face | null>(view.currentBid?.face ?? null);
 
   const bidderName = view.bidHistory.at(-1)?.bidder.name ?? null;
+  // A new bid joins the round's history only once it has finished typing out.
+  const shownHistory = typingBid ? view.bidHistory.slice(0, -1) : view.bidHistory;
   // On your turn the hand previews the face you're considering; otherwise it shows the bid on the table.
-  const highlightFace = isYourTurn ? selectedFace : (view.currentBid?.face ?? null);
+  const highlightFace = isYourTurn ? selectedFace : (shownHistory.at(-1)?.bid.face ?? null);
   const actorName = view.turnOrder[0]?.name ?? "";
 
   return (
@@ -137,8 +145,15 @@ export function MainScreen({
       </div>
 
       <div style={{ display: "flex", gap: 16, flex: 1, minHeight: 0 }}>
-        <CurrentBidCard bid={view.currentBid} bidderName={bidderName} />
-        <BidHistoryCard history={view.bidHistory} />
+        <CurrentBidCard
+          bid={view.currentBid}
+          bidderName={bidderName}
+          actorName={actorName}
+          typing={typingBid}
+          onTyped={onBidTyped}
+          thinkingBot={thinkingBot}
+        />
+        <BidHistoryCard history={shownHistory} />
       </div>
 
       <HandRow dice={view.hand} selectedFace={highlightFace} onesWild={!view.isPalifico} />
@@ -158,15 +173,17 @@ export function MainScreen({
           onCall={onCall}
           onFaceChange={setSelectedFace}
         />
-      ) : awaitingContinue ? (
+      ) : (
+        // Rendered even while a bot moves, with the button hidden, so the board doesn't shift when Continue appears.
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
-          <button type="button" onClick={onContinueBotAction} style={continueButtonStyle}>
+          <button
+            type="button"
+            onClick={onContinueBotAction}
+            disabled={!awaitingContinue}
+            style={{ ...continueButtonStyle, visibility: awaitingContinue ? "visible" : "hidden" }}
+          >
             Continue
           </button>
-        </div>
-      ) : (
-        <div style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic" }}>
-          Waiting on {actorName}&hellip;
         </div>
       )}
     </TableFrame>
