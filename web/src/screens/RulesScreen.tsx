@@ -34,12 +34,16 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
 
         <RuleSection title="Raising the bid">
           <p style={paragraphStyle}>
-            Each new bid must beat the last one: claim more dice on the same face, or the same count on a higher
-            face.
+            Each new bid must beat the last one. Between Twos through Sixes, either claim more dice on any face, or
+            keep the same count and move to a higher face. Aces work on a different scale because they are wild:
+            switching to Aces needs at least half the count (rounded up), and switching away from Aces needs at
+            least double the count plus one.
           </p>
           <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-            <BidTransitionExample from="2 × Threes" to="3 × Threes" note="higher quantity, same face" />
-            <BidTransitionExample from="2 × Threes" to="2 × Fours" note="same quantity, higher face" />
+            <BidTransitionExample from="3 × Fives" to="4 × Twos" note="higher quantity, any face" />
+            <BidTransitionExample from="3 × Threes" to="3 × Fours" note="same quantity, higher face" />
+            <BidTransitionExample from="5 × Fives" to="3 × Aces" note="onto Aces: half, rounded up" />
+            <BidTransitionExample from="2 × Aces" to="5 × Sixes" note="off Aces: double plus one" />
           </div>
         </RuleSection>
 
