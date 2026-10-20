@@ -20,6 +20,10 @@ liar on the current bid.
 
 ## Play in the browser
 
+The latest version of `main` is published at https://carbo-lopo.github.io/liars-dice/.
+
+To run it locally:
+
 ```
 cd web
 npm ci
