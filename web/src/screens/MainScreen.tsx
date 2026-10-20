@@ -51,7 +51,7 @@ export function MainScreen({
   const [selectedFace, setSelectedFace] = useState<Face | null>(view.currentBid?.face ?? null);
 
   const bidderName = view.bidHistory.at(-1)?.bidder.name ?? null;
-  // A bot's bid joins the round's history only once it has finished typing out.
+  // A new bid joins the round's history only once it has finished typing out.
   const shownHistory = typingBid ? view.bidHistory.slice(0, -1) : view.bidHistory;
   // On your turn the hand previews the face you're considering; otherwise it shows the bid on the table.
   const highlightFace = isYourTurn ? selectedFace : (shownHistory.at(-1)?.bid.face ?? null);

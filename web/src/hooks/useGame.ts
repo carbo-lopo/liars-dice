@@ -36,7 +36,7 @@ export interface UseGameApi {
   awaitingContinue: boolean;
   /** Name of the bot currently deciding its move, if any. */
   thinkingBot: string | null;
-  /** The latest bid was just placed by a bot and is still being typed out on screen. */
+  /** The latest bid was just placed and is still being typed out on screen. */
   typingBid: boolean;
   resolution: ChallengeResolution | null;
   result: GameResult | null;
@@ -44,7 +44,7 @@ export interface UseGameApi {
   placeBid: (bid: Bid) => void;
   call: () => void;
   continueAfterBotAction: () => void;
-  /** Called by the UI once a bot's bid has finished typing out. */
+  /** Called by the UI once the latest bid has finished typing out. */
   finishTyping: () => void;
   continueAfterReveal: () => void;
   playAgain: () => void;
@@ -114,7 +114,15 @@ export function useGame(): UseGameApi {
     [handleEvents, bump],
   );
 
-  const placeBid = useCallback((bid: Bid) => humanAction((engine) => engine.bid(bid)), [humanAction]);
+  const placeBid = useCallback(
+    (bid: Bid) =>
+      humanAction((engine) => {
+        const events = engine.bid(bid);
+        setTypingBid(true);
+        return events;
+      }),
+    [humanAction],
+  );
   const call = useCallback(() => humanAction((engine) => engine.call()), [humanAction]);
 
   const continueAfterBotAction = useCallback(() => {
@@ -123,8 +131,10 @@ export function useGame(): UseGameApi {
   }, [bump]);
 
   const finishTyping = useCallback(() => {
+    const bidder = engineRef.current.game.round.bidHistory.at(-1)?.bidder;
     setTypingBid(false);
-    setAwaitingContinue(true);
+    // A bot's bid waits for "Continue"; after the player's own bid the next bot starts thinking.
+    if (bidder && !bidder.isHuman) setAwaitingContinue(true);
   }, []);
 
   const continueAfterReveal = useCallback(() => {
@@ -149,8 +159,8 @@ export function useGame(): UseGameApi {
 
   // Runs exactly one bot move whenever it's a bot's turn on the main screen and
   // nothing is waiting on the player. The bot "thinks" for a short delay first.
-  // A bot bid is then typed out by the UI, which calls finishTyping, and waits
-  // for "Continue"; a bot call goes straight to the reveal screen.
+  // A bot bid is then typed out by the UI, which calls finishTyping; a bot call
+  // goes straight to the reveal screen.
   useEffect(() => {
     if (screen !== "main" || awaitingContinue || typingBid) return;
     const engine = engineRef.current;
