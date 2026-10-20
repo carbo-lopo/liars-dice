@@ -1,6 +1,6 @@
 # Liar's Dice — Game Engine & Bot AI (v0.1)
 
-Singleplayer Liar's Dice: you against bots, played in the terminal.
+Singleplayer Liar's Dice: you against bots, in the terminal or the browser.
 
 ## Setup
 
@@ -17,6 +17,16 @@ npm run play -- 5     # 2 to 8 players in total, including you
 
 Type `bid <quantity> <face>` (e.g. `bid 4 5`) to raise, or `call` to call
 liar on the current bid.
+
+## Play in the browser
+
+```
+cd web
+npm ci
+npm run dev           # then open the local address it prints
+```
+
+`npm run build` (inside `web/`) produces a static site in `web/dist/`.
 
 ## Test
 
@@ -43,6 +53,7 @@ src/
                          AbstractMatrixStrategy (shared logic) and one class per personality
     roster.ts          The strategies available to the CLI
   cli/          Terminal game: main loop, input parsing, rendering, options
+web/            Browser game (React + Vite); imports the engine from src/ via @engine
 tests/          Vitest suite, including full-game integration tests
 ```
 
