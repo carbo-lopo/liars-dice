@@ -51,8 +51,8 @@ export interface UseGameApi {
 }
 
 /** How long a bot appears to think before moving, in milliseconds. */
-const THINKING_MIN_MS = 700;
-const THINKING_MAX_MS = 1300;
+const THINKING_MIN_MS = 1000;
+const THINKING_MAX_MS = 1700;
 
 function thinkingDelay(): number {
   return THINKING_MIN_MS + Math.random() * (THINKING_MAX_MS - THINKING_MIN_MS);
