@@ -65,7 +65,7 @@ export function OpponentPanel({
         </span>
       </div>
       <div style={{ display: "flex", gap: 6, minHeight: 28 }}>
-        {!eliminated && Array.from({ length: diceCount }).map((_, i) => <Die key={i} faceDown size={28} />)}
+        {!eliminated && Array.from({ length: diceCount }).map((_, i) => <Die key={i} faceDown size={28} decorative />)}
       </div>
     </div>
   );

@@ -10,20 +10,36 @@ const PIP_LAYOUTS: Record<Face, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
+const FACE_NAMES: Record<Face, string> = {
+  1: "Ace",
+  2: "Two",
+  3: "Three",
+  4: "Four",
+  5: "Five",
+  6: "Six",
+};
+
 export interface DieProps {
   face?: Face;
   faceDown?: boolean;
   size?: number;
   /** Gold ring: this die is currently "counting" toward a bid/selection. */
   highlighted?: boolean;
+  /** Hide from assistive technology when nearby text already conveys the information. */
+  decorative?: boolean;
 }
 
-export function Die({ face, faceDown = false, size = 50, highlighted = false }: DieProps) {
+function accessibilityProps(label: string, decorative: boolean) {
+  return decorative ? { "aria-hidden": true } : { role: "img", "aria-label": label };
+}
+
+export function Die({ face, faceDown = false, size = 50, highlighted = false, decorative = false }: DieProps) {
   const radius = Math.round(size * 0.16);
 
   if (faceDown || face === undefined) {
     return (
       <div
+        {...accessibilityProps("Hidden die", decorative)}
         style={{
           width: size,
           height: size,
@@ -41,8 +57,11 @@ export function Die({ face, faceDown = false, size = 50, highlighted = false }: 
   const pipSize = Math.max(4, Math.round(size * 0.16));
   const active = new Set(PIP_LAYOUTS[face]);
 
+  const label = highlighted ? `${FACE_NAMES[face]}, counts toward the bid` : FACE_NAMES[face];
+
   return (
     <div
+      {...accessibilityProps(label, decorative)}
       style={{
         width: size,
         height: size,

@@ -31,7 +31,7 @@ export function StartScreen({ onPlay, onRules }: StartScreenProps) {
         <div style={{ display: "flex", gap: 14 }}>
           {DECORATIVE_DICE.map((d, i) => (
             <div key={i} style={{ transform: `rotate(${d.rotate}deg)` }}>
-              <Die face={d.face} size={46} />
+              <Die face={d.face} size={46} decorative />
             </div>
           ))}
         </div>
