@@ -1,7 +1,7 @@
 import type { Face } from "@engine/types/face.js";
 
-// "Aces" for 1s (they're wild outside Palifico rounds) matches the language
-// used throughout the approved mockups; every other face is just its plural.
+// 1s are called "Aces" everywhere in the UI because of their wild-card role;
+// every other face is just its number word.
 const PLURAL_NAMES: Record<Face, string> = {
   1: "Aces",
   2: "Twos",

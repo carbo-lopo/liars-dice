@@ -1,5 +1,5 @@
-/* Design tokens lifted directly from the Tabletop Realism mockups.
-   See the project's UI-DESIGN.md for the source-of-truth values. */
+/* Shared colours and fonts for the felt-table theme. Components refer to these
+   variables rather than hard-coding values. */
 :root {
   --wood-rail: linear-gradient(#7a4e28, #5c3a1e);
   --felt: radial-gradient(ellipse at 50% 20%, #256b50, #153f2e 75%);
