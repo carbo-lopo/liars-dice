@@ -144,7 +144,7 @@ export function MainScreen({
       <HandRow dice={view.hand} selectedFace={highlightFace} onesWild={!view.isPalifico} />
 
       {error && (
-        <div style={{ color: "var(--text-primary)", background: "rgba(154,58,44,0.5)", padding: "8px 12px", borderRadius: 8, fontSize: 13 }}>
+        <div role="alert" style={{ color: "var(--text-primary)", background: "rgba(154,58,44,0.5)", padding: "8px 12px", borderRadius: 8, fontSize: 13 }}>
           {error}
         </div>
       )}

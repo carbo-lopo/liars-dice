@@ -9,6 +9,8 @@ export interface CurrentBidCardProps {
 export function CurrentBidCard({ bid, bidderName }: CurrentBidCardProps) {
   return (
     <div
+      aria-live="polite"
+      aria-atomic="true"
       style={{
         flex: 1.3,
         minWidth: 0,
