@@ -6,7 +6,9 @@ import type { ReactNode } from "react";
 
 export interface RulesScreenProps {
   onBack: () => void;
-  onPlay: () => void;
+  /** Omit when Rules was opened mid-game -- the bottom button then just
+   * resumes the game in progress instead of starting a new one. */
+  onPlay?: () => void;
 }
 
 export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
@@ -24,9 +26,9 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <RuleSection title="Objective">
           <p style={paragraphStyle}>
-            Everyone rolls a hidden hand of dice. On your turn you either raise the standing bid &mdash; a claim about
-            how many dice, across every hand at the table, show a certain face &mdash; or call &ldquo;Liar!&rdquo; on the
-            last bid if you don&rsquo;t believe it. Guess wrong and you lose a die; last player still holding dice wins.
+            Everyone rolls a hidden hand of dice. The first player in a round makes a claim of how many dice show a certain 
+            face across every hand at the table. Each player after that can either raise the previous bid, or call &ldquo;Liar!&rdquo; 
+            if they don't believe it's true. Guess wrong and you lose a die; last player still holding dice wins!
           </p>
         </RuleSection>
 
@@ -43,7 +45,7 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
 
         <RuleSection title="Aces are wild">
           <p style={paragraphStyle}>
-            A rolled 1 (an Ace) counts toward <em>any</em> face you bid on &mdash; except during a Palifico round (see
+            A rolled 1 (an Ace) counts toward <em>any</em> face you bid on, except during a Palifico round (see
             below). Here, two Aces in this hand both count toward a bid on Fives:
           </p>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -58,7 +60,7 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
 
         <RuleSection title="Calling Liar">
           <p style={paragraphStyle}>
-            Challenge the last bid and every hand flips face-up. The dice that actually match (including wild Aces)
+            Challenge the last bid and every hand is revealed. The dice that actually match (including wild Aces)
             are tallied against the claim:
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -87,8 +89,9 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
             </div>
             <p style={{ ...paragraphStyle, margin: 0 }}>
               When a player starts their turn with exactly one die left, that round becomes a Palifico round: Aces
-              stop being wild, and every bid that round must stay on whatever face the opening bid used &mdash; only the
-              quantity can rise. You&rsquo;ll see a bold pulsing banner on the table whenever this is active.
+              stop being wild, and every bid that round must stay on whatever face the opening bid used; only the
+              quantity can rise. This round will be indicated by a Palifico icon on the top of the screen. 
+              The next round will return to normal rules.
             </p>
           </div>
         </RuleSection>
@@ -116,8 +119,8 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
       </div>
 
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button type="button" onClick={onPlay} style={primaryButtonStyle}>
-          Start Playing
+        <button type="button" onClick={onPlay ?? onBack} style={primaryButtonStyle}>
+          {onPlay ? "Start Playing" : "Resume Game"}
         </button>
       </div>
     </TableFrame>

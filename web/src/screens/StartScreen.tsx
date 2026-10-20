@@ -49,7 +49,7 @@ export function StartScreen({ onPlay, onRules }: StartScreenProps) {
             Liar&rsquo;s Dice
           </span>
           <span style={{ fontSize: 16, color: "var(--text-secondary)", fontStyle: "italic", textAlign: "center" }}>
-            Bluff, bid, and call the liar. Last one with dice wins.
+            Bluff, bid, and call the liar. Last one with dice wins!
           </span>
         </div>
 

@@ -5,7 +5,10 @@ export interface OpponentPanelProps {
   personality?: string;
   diceCount: number;
   eliminated: boolean;
-  isCurrentTurn: boolean;
+  /** True when this opponent placed the bid currently shown in the Current Bid
+   * card -- highlighting the bidder (rather than whoever acts next) is what
+   * matches the eye to the bid actually on the table. */
+  isCurrentBidder: boolean;
   accent?: string;
 }
 
@@ -14,7 +17,7 @@ export function OpponentPanel({
   personality,
   diceCount,
   eliminated,
-  isCurrentTurn,
+  isCurrentBidder,
   accent,
 }: OpponentPanelProps) {
   return (
@@ -22,7 +25,7 @@ export function OpponentPanel({
       style={{
         flex: 1,
         background: "var(--panel-bg)",
-        border: `1px solid ${isCurrentTurn ? "var(--gold)" : (accent ?? "var(--panel-border)")}`,
+        border: `1px solid ${isCurrentBidder ? "var(--gold)" : (accent ?? "var(--panel-border)")}`,
         borderRadius: 10,
         padding: "14px 18px",
         display: "flex",

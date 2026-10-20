@@ -7,6 +7,7 @@ import { HandRow } from "../components/HandRow.js";
 import { ActionBar } from "../components/ActionBar.js";
 import { PalificoIcon } from "../components/PalificoIcon.js";
 import { QuitButton } from "../components/QuitButton.js";
+import { RulesButton } from "../components/RulesButton.js";
 import { useState } from "react";
 
 const PERSONALITY_ACCENT: Record<string, string> = {
@@ -24,6 +25,7 @@ export interface MainScreenProps {
   onChallenge: () => void;
   onContinueBotAction: () => void;
   onQuit: () => void;
+  onRules: () => void;
 }
 
 export function MainScreen({
@@ -35,6 +37,7 @@ export function MainScreen({
   onChallenge,
   onContinueBotAction,
   onQuit,
+  onRules,
 }: MainScreenProps) {
   const [selectedFace, setSelectedFace] = useState<Face | null>(view.currentBid?.face ?? null);
 
@@ -49,7 +52,8 @@ export function MainScreen({
     palificoFace: view.palificoFace,
   };
 
-  const bidderName = view.bidHistory.length > 0 ? nameFor(view.bidHistory[view.bidHistory.length - 1]!.playerId) : null;
+  const currentBidderId = view.bidHistory.length > 0 ? view.bidHistory[view.bidHistory.length - 1]!.playerId : null;
+  const bidderName = currentBidderId ? nameFor(currentBidderId) : null;
   const actorName = nameFor(view.currentPlayerId);
 
   return (
@@ -71,6 +75,7 @@ export function MainScreen({
           >
             Round {view.roundNumber}
           </span>
+          <RulesButton onClick={onRules} />
           <QuitButton onClick={onQuit} />
         </div>
       </div>
@@ -132,7 +137,7 @@ export function MainScreen({
             personality={personalityFor(o.id)}
             diceCount={o.diceCount}
             eliminated={o.eliminated}
-            isCurrentTurn={view.currentPlayerId === o.id}
+            isCurrentBidder={currentBidderId === o.id}
             accent={PERSONALITY_ACCENT[personalityFor(o.id)]}
           />
         ))}

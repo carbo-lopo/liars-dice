@@ -4,15 +4,17 @@ import { Die } from "../components/Die.js";
 import { bidLabel, faceNameForCount } from "../lib/faceNames.js";
 import { conjugate } from "../lib/grammar.js";
 import { QuitButton } from "../components/QuitButton.js";
+import { RulesButton } from "../components/RulesButton.js";
 
 export interface RevealScreenProps {
   resolution: ChallengeResolution;
   view: PlayerView;
   onContinue: () => void;
   onQuit: () => void;
+  onRules: () => void;
 }
 
-export function RevealScreen({ resolution, view, onContinue, onQuit }: RevealScreenProps) {
+export function RevealScreen({ resolution, view, onContinue, onQuit, onRules }: RevealScreenProps) {
   const nameFor = (playerId: string): string => {
     if (playerId === view.selfId) return view.self.name;
     return view.others.find((o) => o.id === playerId)?.name ?? playerId;
@@ -34,7 +36,8 @@ export function RevealScreen({ resolution, view, onContinue, onQuit }: RevealScr
 
   return (
     <TableFrame>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+        <RulesButton onClick={onRules} />
         <QuitButton onClick={onQuit} />
       </div>
 
