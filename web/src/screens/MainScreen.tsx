@@ -137,7 +137,7 @@ export function MainScreen({
       </div>
 
       <div style={{ display: "flex", gap: 16, flex: 1, minHeight: 0 }}>
-        <CurrentBidCard bid={view.currentBid} bidderName={bidderName} />
+        <CurrentBidCard bid={view.currentBid} bidderName={bidderName} actorName={actorName} />
         <BidHistoryCard history={view.bidHistory} />
       </div>
 

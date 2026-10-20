@@ -4,9 +4,17 @@ import { bidLabel } from "../lib/faceNames.js";
 export interface CurrentBidCardProps {
   bid: { quantity: number; face: 1 | 2 | 3 | 4 | 5 | 6 } | null;
   bidderName: string | null;
+  /** Whoever acts next; "You" when it's the player. */
+  actorName: string;
 }
 
-export function CurrentBidCard({ bid, bidderName }: CurrentBidCardProps) {
+function nextMoveHint(hasBid: boolean, actorName: string): string {
+  const isYou = actorName === "You";
+  if (!hasBid) return isYou ? "You open the bidding this round." : `${actorName} opens the bidding this round.`;
+  return isYou ? "Raise it, or call the bluff." : `${actorName} to raise or call.`;
+}
+
+export function CurrentBidCard({ bid, bidderName, actorName }: CurrentBidCardProps) {
   return (
     <div
       aria-live="polite"
@@ -38,7 +46,7 @@ export function CurrentBidCard({ bid, bidderName }: CurrentBidCardProps) {
         </span>
       )}
       <span style={{ fontSize: 13, color: "#7A6A4E", fontStyle: "italic" }}>
-        {bid ? "Raise it, or call the bluff." : "You open the bidding this round."}
+        {nextMoveHint(bid !== null, actorName)}
       </span>
     </div>
   );
