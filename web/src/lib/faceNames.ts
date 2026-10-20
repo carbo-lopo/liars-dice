@@ -1,4 +1,4 @@
-import type { Face } from "@engine/types.js";
+import type { Face } from "@engine/types/face.js";
 
 // "Aces" for 1s (they're wild outside Palifico rounds) matches the language
 // used throughout the approved mockups; every other face is just its plural.

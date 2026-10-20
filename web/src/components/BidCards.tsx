@@ -1,4 +1,4 @@
-import type { BidRecord } from "@engine/types.js";
+import type { PlayerView } from "@engine/types/playerView.js";
 import { bidLabel } from "../lib/faceNames.js";
 
 export interface CurrentBidCardProps {
@@ -43,11 +43,10 @@ export function CurrentBidCard({ bid, bidderName }: CurrentBidCardProps) {
 }
 
 export interface BidHistoryCardProps {
-  history: BidRecord[];
-  nameFor: (playerId: string) => string;
+  history: PlayerView["bidHistory"];
 }
 
-export function BidHistoryCard({ history, nameFor }: BidHistoryCardProps) {
+export function BidHistoryCard({ history }: BidHistoryCardProps) {
   return (
     <div
       style={{
@@ -81,7 +80,7 @@ export function BidHistoryCard({ history, nameFor }: BidHistoryCardProps) {
                   fontWeight: isLatest ? 700 : 400,
                 }}
               >
-                <span>{nameFor(record.playerId)}</span>
+                <span>{record.bidder.name}</span>
                 <span>{bidLabel(record.bid.quantity, record.bid.face)}</span>
               </div>
             );

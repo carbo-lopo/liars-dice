@@ -1,4 +1,6 @@
-import type { ChallengeResolution, Face, PlayerView } from "@engine/types.js";
+import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
+import type { Player } from "@engine/models/player.js";
+import type { Face } from "@engine/types/face.js";
 import { TableFrame } from "../components/TableFrame.js";
 import { Die } from "../components/Die.js";
 import { bidLabel, faceNameForCount } from "../lib/faceNames.js";
@@ -8,29 +10,23 @@ import { RulesButton } from "../components/RulesButton.js";
 
 export interface RevealScreenProps {
   resolution: ChallengeResolution;
-  view: PlayerView;
   onContinue: () => void;
   onQuit: () => void;
   onRules: () => void;
 }
 
-export function RevealScreen({ resolution, view, onContinue, onQuit, onRules }: RevealScreenProps) {
-  const nameFor = (playerId: string): string => {
-    if (playerId === view.selfId) return view.self.name;
-    return view.others.find((o) => o.id === playerId)?.name ?? playerId;
-  };
+/** "your" for the human, "Cora's" for a bot. */
+function possessive(player: Player): string {
+  return player.isHuman ? "your" : `${player.name}’s`;
+}
 
-  const bidderName = nameFor(resolution.bidderId);
-  const challengerName = nameFor(resolution.challengerId);
-  const loserName = nameFor(resolution.loserId);
-  const challengerIsYou = resolution.challengerId === view.selfId;
-  const loserIsYou = resolution.loserId === view.selfId;
-  // Use the resolution's own recorded wild-ace status, not view.isPalificoRound
-  // -- by the time this screen renders, the engine has already set up the
-  // *next* round's Palifico flag as part of resolving this same challenge, so
-  // reading it here would describe the wrong round.
-  const onesWild = resolution.onesWild;
-  const face = resolution.finalBid.face as Face;
+export function RevealScreen({ resolution, onContinue, onQuit, onRules }: RevealScreenProps) {
+  const { challenger, bidder, loser, bid } = resolution;
+  // The resolution records whether its own round was Palifico. By the time this
+  // screen shows, the engine has already started the next round.
+  const onesWild = !resolution.isPalifico;
+  const face = bid.face;
+  const bidHeld = resolution.outcome === "challenger-wrong";
 
   const countsFor = (die: Face) => die === face || (onesWild && die === 1 && face !== 1);
 
@@ -50,17 +46,17 @@ export function RevealScreen({ resolution, view, onContinue, onQuit, onRules }: 
           color: "var(--text-primary)",
         }}
       >
-        {challengerName} {conjugate(challengerIsYou, "call")} LIAR on {bidderName}&rsquo;s bid of{" "}
-        {bidLabel(resolution.finalBid.quantity, resolution.finalBid.face)}!
+        {challenger.name} {conjugate(challenger.isHuman, "call")} LIAR on {possessive(bidder)} bid of{" "}
+        {bidLabel(bid.quantity, bid.face)}!
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {Object.entries(resolution.reveal).map(([playerId, dice]) => {
+        {resolution.reveal.map(({ player, dice }) => {
           const count = dice.filter((d) => countsFor(d)).length;
           return (
-            <div key={playerId} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div key={player.name} style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <span style={{ width: 70, fontSize: 14, color: "var(--text-primary)", fontWeight: 600 }}>
-                {nameFor(playerId)}
+                {player.name}
               </span>
               <div style={{ display: "flex", gap: 6 }}>
                 {dice.map((d, i) => (
@@ -85,13 +81,13 @@ export function RevealScreen({ resolution, view, onContinue, onQuit, onRules }: 
         }}
       >
         <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
-          {resolution.outcome === "bidder-right" ? "TRUE" : "FALSE"} &mdash; {resolution.actualCount}{" "}
-          {faceNameForCount(resolution.finalBid.face, resolution.actualCount).toLowerCase()} counted
-          {onesWild && resolution.finalBid.face !== 1 ? " (wild Aces included)" : ""}.
+          {bidHeld ? "TRUE" : "FALSE"} &mdash; {resolution.actualCount}{" "}
+          {faceNameForCount(bid.face, resolution.actualCount).toLowerCase()} counted
+          {onesWild && bid.face !== 1 ? " (wild Aces included)" : ""}.
         </div>
         <div style={{ fontSize: 14 }}>
-          {resolution.outcome === "bidder-right" ? "The bid held." : "The bid was a bluff."} {loserName}{" "}
-          {conjugate(loserIsYou, "lose")} a die.
+          {bidHeld ? "The bid held." : "The bid was a bluff."} {loser.name} {conjugate(loser.isHuman, "lose")} a
+          die.
         </div>
       </div>
 

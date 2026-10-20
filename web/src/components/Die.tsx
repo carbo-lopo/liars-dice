@@ -1,4 +1,4 @@
-import type { Face } from "@engine/types.js";
+import type { Face } from "@engine/types/face.js";
 
 // 3x3 pip grid, indices 0-8 left-to-right/top-to-bottom.
 const PIP_LAYOUTS: Record<Face, number[]> = {

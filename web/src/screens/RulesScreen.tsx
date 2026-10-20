@@ -1,4 +1,4 @@
-import type { Face } from "@engine/types.js";
+import type { Face } from "@engine/types/face.js";
 import { TableFrame } from "../components/TableFrame.js";
 import { Die } from "../components/Die.js";
 import { PalificoIcon } from "../components/PalificoIcon.js";

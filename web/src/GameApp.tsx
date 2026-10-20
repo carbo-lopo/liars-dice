@@ -11,13 +11,15 @@ export interface GameAppProps {
 export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
   const {
     view,
+    opponents,
     screen,
     isYourTurn,
     awaitingContinue,
     resolution,
+    result,
     error,
     placeBid,
-    challenge,
+    call,
     continueAfterBotAction,
     continueAfterReveal,
     playAgain,
@@ -27,7 +29,6 @@ export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
     return (
       <RevealScreen
         resolution={resolution}
-        view={view}
         onContinue={continueAfterReveal}
         onQuit={onMainMenu}
         onRules={onOpenRules}
@@ -35,18 +36,19 @@ export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
     );
   }
 
-  if (screen === "gameover") {
-    return <GameOverScreen view={view} onPlayAgain={playAgain} onMainMenu={onMainMenu} />;
+  if (screen === "gameover" && result) {
+    return <GameOverScreen result={result} onPlayAgain={playAgain} onMainMenu={onMainMenu} />;
   }
 
   return (
     <MainScreen
       view={view}
+      opponents={opponents}
       isYourTurn={isYourTurn}
       awaitingContinue={awaitingContinue}
       error={error}
       onPlaceBid={placeBid}
-      onChallenge={challenge}
+      onCall={call}
       onContinueBotAction={continueAfterBotAction}
       onQuit={onMainMenu}
       onRules={onOpenRules}

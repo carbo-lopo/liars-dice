@@ -1,22 +1,17 @@
-import type { PlayerView } from "@engine/types.js";
+import type { GameResult } from "../hooks/useGame.js";
 import { TableFrame } from "../components/TableFrame.js";
 import { conjugate } from "../lib/grammar.js";
 
 export interface GameOverScreenProps {
-  view: PlayerView;
+  result: GameResult;
   onPlayAgain: () => void;
   onMainMenu: () => void;
 }
 
-export function GameOverScreen({ view, onPlayAgain, onMainMenu }: GameOverScreenProps) {
-  const winnerId = view.winnerId;
-  const isYou = winnerId === view.selfId;
-  const winnerName = isYou ? "You" : view.others.find((o) => o.id === winnerId)?.name ?? "Someone";
-  const loserNames = isYou
-    ? view.others.map((o) => o.name)
-    : [view.self.name, ...view.others.filter((o) => o.id !== winnerId).map((o) => o.name)];
+export function GameOverScreen({ result, onPlayAgain, onMainMenu }: GameOverScreenProps) {
+  const { winnerName, youWon, loserNames } = result;
   const others = loserNames.join(" and ");
-  const losersVerb = loserNames.length === 1 ? "is" : "are";
+  const losersVerb = loserNames.length === 1 && loserNames[0] !== "You" ? "is" : "are";
 
   return (
     <TableFrame>
@@ -54,7 +49,7 @@ export function GameOverScreen({ view, onPlayAgain, onMainMenu }: GameOverScreen
               textAlign: "center",
             }}
           >
-            {winnerName} {conjugate(isYou, "win")} the game!
+            {winnerName} {conjugate(youWon, "win")} the game!
           </span>
           <span style={{ fontSize: 16, color: "var(--text-secondary)", textAlign: "center" }}>
             {others} {losersVerb} out of dice.
@@ -71,7 +66,7 @@ export function GameOverScreen({ view, onPlayAgain, onMainMenu }: GameOverScreen
           }}
         >
           <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: "var(--ink)" }}>
-            Won in Round {view.roundNumber}
+            Won in Round {result.finalRound + 1}
           </span>
         </div>
 

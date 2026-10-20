@@ -1,8 +1,8 @@
-import type { Face } from "@engine/types.js";
+import type { Face } from "@engine/types/face.js";
 import { Die } from "./Die.js";
 
 export interface HandRowProps {
-  dice: Face[];
+  dice: readonly Face[];
   selectedFace?: Face | null;
   onesWild: boolean;
   label?: string;

@@ -1,5 +1,6 @@
-import type { Face, PlayerView } from "@engine/types.js";
-import type { BidContext } from "@engine/engine/bidding.js";
+import type { Face } from "@engine/types/face.js";
+import type { PlayerView } from "@engine/types/playerView.js";
+import type { OpponentSeat } from "../hooks/useGame.js";
 import { TableFrame } from "../components/TableFrame.js";
 import { OpponentPanel } from "../components/OpponentPanel.js";
 import { CurrentBidCard, BidHistoryCard } from "../components/BidCards.js";
@@ -18,11 +19,12 @@ const PERSONALITY_ACCENT: Record<string, string> = {
 
 export interface MainScreenProps {
   view: PlayerView;
+  opponents: OpponentSeat[];
   isYourTurn: boolean;
   awaitingContinue: boolean;
   error: string | null;
   onPlaceBid: (bid: { quantity: number; face: Face }) => void;
-  onChallenge: () => void;
+  onCall: () => void;
   onContinueBotAction: () => void;
   onQuit: () => void;
   onRules: () => void;
@@ -30,31 +32,20 @@ export interface MainScreenProps {
 
 export function MainScreen({
   view,
+  opponents,
   isYourTurn,
   awaitingContinue,
   error,
   onPlaceBid,
-  onChallenge,
+  onCall,
   onContinueBotAction,
   onQuit,
   onRules,
 }: MainScreenProps) {
   const [selectedFace, setSelectedFace] = useState<Face | null>(view.currentBid?.face ?? null);
 
-  const nameFor = (playerId: string): string => {
-    if (playerId === view.selfId) return view.self.name;
-    return view.others.find((o) => o.id === playerId)?.name ?? playerId;
-  };
-
-  const ctx: BidContext = {
-    totalDiceInPlay: view.totalDiceInPlay,
-    isPalificoRound: view.isPalificoRound,
-    palificoFace: view.palificoFace,
-  };
-
-  const currentBidderId = view.bidHistory.length > 0 ? view.bidHistory[view.bidHistory.length - 1]!.playerId : null;
-  const bidderName = currentBidderId ? nameFor(currentBidderId) : null;
-  const actorName = nameFor(view.currentPlayerId);
+  const bidderName = view.bidHistory.at(-1)?.bidder.name ?? null;
+  const actorName = view.turnOrder[0]?.name ?? "";
 
   return (
     <TableFrame>
@@ -73,14 +64,14 @@ export function MainScreen({
               border: "1px solid var(--panel-border)",
             }}
           >
-            Round {view.roundNumber}
+            Round {view.roundNumber + 1}
           </span>
           <RulesButton onClick={onRules} />
           <QuitButton onClick={onQuit} />
         </div>
       </div>
 
-      {view.isPalificoRound && (
+      {view.isPalifico && (
         <div
           style={{
             background: "linear-gradient(rgba(154,58,44,0.6), rgba(122,44,32,0.6))",
@@ -120,7 +111,7 @@ export function MainScreen({
             </span>
             <span style={{ fontSize: 13, color: "#F0D9C9" }}>
               No wild Aces this round
-              {view.palificoFace
+              {view.currentBid
                 ? `, every bid stays on that starter's face`
                 : " — the starter's opening bid sets the locked face"}
               .
@@ -130,25 +121,25 @@ export function MainScreen({
       )}
 
       <div style={{ display: "flex", gap: 16 }}>
-        {view.others.map((o) => (
+        {opponents.map((o) => (
           <OpponentPanel
-            key={o.id}
+            key={o.name}
             name={o.name}
-            personality={personalityFor(o.id)}
+            personality={o.strategyLabel}
             diceCount={o.diceCount}
             eliminated={o.eliminated}
-            isCurrentBidder={currentBidderId === o.id}
-            accent={PERSONALITY_ACCENT[personalityFor(o.id)]}
+            isCurrentBidder={bidderName === o.name}
+            accent={PERSONALITY_ACCENT[o.strategyId]}
           />
         ))}
       </div>
 
       <div style={{ display: "flex", gap: 16, flex: 1, minHeight: 0 }}>
         <CurrentBidCard bid={view.currentBid} bidderName={bidderName} />
-        <BidHistoryCard history={view.bidHistory} nameFor={nameFor} />
+        <BidHistoryCard history={view.bidHistory} />
       </div>
 
-      <HandRow dice={view.self.dice} selectedFace={selectedFace} onesWild={!view.isPalificoRound} />
+      <HandRow dice={view.hand} selectedFace={selectedFace} onesWild={!view.isPalifico} />
 
       {error && (
         <div style={{ color: "var(--text-primary)", background: "rgba(154,58,44,0.5)", padding: "8px 12px", borderRadius: 8, fontSize: 13 }}>
@@ -158,12 +149,11 @@ export function MainScreen({
 
       {isYourTurn ? (
         <ActionBar
-          currentBid={view.currentBid}
-          ctx={ctx}
-          canChallenge={view.currentBid !== null}
+          rules={view}
+          canCall={view.currentBid !== null}
           disabled={false}
           onPlaceBid={onPlaceBid}
-          onChallenge={onChallenge}
+          onCall={onCall}
           onFaceChange={setSelectedFace}
         />
       ) : awaitingContinue ? (
@@ -192,13 +182,3 @@ const continueButtonStyle = {
   fontSize: 15,
   cursor: "pointer",
 } as const;
-
-function personalityFor(playerId: string): string {
-  // PlayerView's OpponentView intentionally doesn't carry personality (it's
-  // not something a bot's own decision-making should see), but the two
-  // seats are fixed for this single-player build, so the UI can label them
-  // as flavor text without the engine exposing anything gameplay-relevant.
-  if (playerId === "cora") return "cautious";
-  if (playerId === "duke") return "aggressive";
-  return "";
-}

@@ -1,77 +1,76 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
-import type { Bid, Face } from "@engine/types.js";
-import { isValidRaise, type BidContext } from "@engine/engine/bidding.js";
+import { isValidRaise, type BiddingRules } from "@engine/rules/bidding.js";
+import type { Bid } from "@engine/types/bid.js";
+import type { Face } from "@engine/types/face.js";
 import { faceName } from "../lib/faceNames.js";
 
 const ALL_FACES: Face[] = [1, 2, 3, 4, 5, 6];
 
-/** Smallest quantity that makes `{quantity, face}` a legal raise over `previous`,
- * found by asking the real engine validator rather than re-deriving the math --
- * this is the same rule `bidding.ts` enforces, so the UI can never drift from it. */
-function minQuantityForFace(previous: Bid | null, face: Face, ctx: BidContext): number {
-  if (!previous) return 1;
-  const ceiling = ctx.totalDiceInPlay * 8;
+/** Smallest legal quantity for a bid on `face`, found by asking the engine's own validator. */
+function minQuantityForFace(rules: BiddingRules, face: Face): number {
+  if (!rules.currentBid) return 1;
+  const ceiling = rules.totalDiceInPlay * 8;
   for (let q = 1; q <= ceiling; q++) {
-    if (isValidRaise(previous, { quantity: q, face }, ctx).valid) return q;
+    if (isValidRaise(rules, { quantity: q, face }).valid) return q;
   }
-  return previous.quantity + 1;
+  return rules.currentBid.quantity + 1;
+}
+
+/** In a Palifico round the opening bid's face is locked for the rest of the round. */
+function lockedFaceOf(rules: BiddingRules): Face | null {
+  return rules.isPalifico ? (rules.currentBid?.face ?? null) : null;
 }
 
 export interface ActionBarProps {
-  currentBid: Bid | null;
-  ctx: BidContext;
-  canChallenge: boolean;
+  rules: BiddingRules;
+  canCall: boolean;
   disabled: boolean;
   onPlaceBid: (bid: Bid) => void;
-  onChallenge: () => void;
+  onCall: () => void;
   onFaceChange?: (face: Face) => void;
 }
 
 export function ActionBar({
-  currentBid,
-  ctx,
-  canChallenge,
+  rules,
+  canCall,
   disabled,
   onPlaceBid,
-  onChallenge,
+  onCall,
   onFaceChange,
 }: ActionBarProps) {
-  const facesAvailable: Face[] =
-    ctx.isPalificoRound && ctx.palificoFace !== null ? [ctx.palificoFace] : ALL_FACES;
-
-  const defaultFace = (): Face => {
-    if (ctx.isPalificoRound && ctx.palificoFace !== null) return ctx.palificoFace;
-    return currentBid?.face ?? 2;
-  };
+  const { currentBid } = rules;
+  const lockedFace = lockedFaceOf(rules);
+  const facesAvailable: Face[] = lockedFace !== null ? [lockedFace] : ALL_FACES;
+  const defaultFace = (): Face => lockedFace ?? currentBid?.face ?? 2;
 
   const [selectedFace, setSelectedFace] = useState<Face>(defaultFace());
-  const [quantity, setQuantity] = useState<number>(() => minQuantityForFace(currentBid, defaultFace(), ctx));
+  const [quantity, setQuantity] = useState<number>(() => minQuantityForFace(rules, defaultFace()));
 
   // Re-anchor whenever the underlying bid situation actually changes (a new
   // bid landed, a new round started, Palifico kicked in, etc.) -- not on
   // every render, since the user's own face/qty picks should stick around
   // while they're still deciding.
-  const bidKey = `${currentBid?.quantity ?? "-"}:${currentBid?.face ?? "-"}:${ctx.isPalificoRound}:${ctx.palificoFace ?? "-"}`;
+  const bidKey = `${currentBid?.quantity ?? "-"}:${currentBid?.face ?? "-"}:${rules.isPalifico}`;
   useEffect(() => {
-    const face = ctx.isPalificoRound && ctx.palificoFace !== null ? ctx.palificoFace : (currentBid?.face ?? 2);
+    const face = defaultFace();
     setSelectedFace(face);
-    setQuantity(minQuantityForFace(currentBid, face, ctx));
+    setQuantity(minQuantityForFace(rules, face));
     onFaceChange?.(face);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bidKey]);
 
-  const minQty = minQuantityForFace(currentBid, selectedFace, ctx);
+  const minQty = minQuantityForFace(rules, selectedFace);
 
   const handleFaceClick = (face: Face) => {
     if (disabled || !facesAvailable.includes(face)) return;
     setSelectedFace(face);
-    setQuantity(minQuantityForFace(currentBid, face, ctx));
+    setQuantity(minQuantityForFace(rules, face));
     onFaceChange?.(face);
   };
 
   const showAceNote =
-    !!currentBid && !ctx.isPalificoRound && (selectedFace === 1) !== (currentBid.face === 1);
+    !!currentBid && !rules.isPalifico && (selectedFace === 1) !== (currentBid.face === 1);
   const aceNoteDetail = currentBid && selectedFace === 1 ? "halved, rounded up" : "doubled, plus one";
 
   return (
@@ -187,9 +186,9 @@ export function ActionBar({
         </button>
         <button
           type="button"
-          disabled={disabled || !canChallenge}
-          onClick={onChallenge}
-          style={dangerButtonStyle(disabled || !canChallenge)}
+          disabled={disabled || !canCall}
+          onClick={onCall}
+          style={dangerButtonStyle(disabled || !canCall)}
         >
           Call Liar!
         </button>
