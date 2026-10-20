@@ -1,0 +1,88 @@
+/* Design tokens lifted directly from the Tabletop Realism mockups.
+   See the project's UI-DESIGN.md for the source-of-truth values. */
+:root {
+  --wood-rail: linear-gradient(#7a4e28, #5c3a1e);
+  --felt: radial-gradient(ellipse at 50% 20%, #256b50, #153f2e 75%);
+  --panel-bg: rgba(0, 0, 0, 0.22);
+  --panel-border: rgba(233, 217, 184, 0.2);
+  --parchment: #f3e9d2;
+  --parchment-border: #6b4423;
+  --ink: #3b2a1a;
+  --text-primary: #f3e9d2;
+  --text-secondary: #c9bfa0;
+  --gold: #c9a227;
+  --gold-strong: #d9b84a;
+  --gold-deep: #b8952a;
+  --gold-border: #8a6e1e;
+  --danger-strong: #9a3a2c;
+  --danger-deep: #7a2c20;
+  --danger-border: #5c2016;
+  --die-face-top: #fbf6e8;
+  --die-face-bottom: #efe6cc;
+  --die-pip: #2b2118;
+  --die-shadow: #b8a96f;
+  --die-back: #3b2a1a;
+  --die-back-dark: #241a10;
+
+  --font-display: "Libre Baskerville", Georgia, serif;
+  --font-body: system-ui, -apple-system, sans-serif;
+
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: #1c130b;
+  color: var(--text-primary);
+}
+
+button {
+  font-family: inherit;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes palifico-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(201, 162, 39, 0.35),
+      0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(201, 162, 39, 0.65),
+      0 4px 18px rgba(0, 0, 0, 0.5);
+  }
+}
