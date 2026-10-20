@@ -15,12 +15,15 @@ export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
     screen,
     isYourTurn,
     awaitingContinue,
+    thinkingBot,
+    typingBid,
     resolution,
     result,
     error,
     placeBid,
     call,
     continueAfterBotAction,
+    finishTyping,
     continueAfterReveal,
     playAgain,
   } = useGame();
@@ -46,10 +49,13 @@ export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
       opponents={opponents}
       isYourTurn={isYourTurn}
       awaitingContinue={awaitingContinue}
+      thinkingBot={thinkingBot}
+      typingBid={typingBid}
       error={error}
       onPlaceBid={placeBid}
       onCall={call}
       onContinueBotAction={continueAfterBotAction}
+      onBidTyped={finishTyping}
       onQuit={onMainMenu}
       onRules={onOpenRules}
     />

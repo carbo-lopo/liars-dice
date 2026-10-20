@@ -1,11 +1,15 @@
 import type { PlayerView } from "@engine/types/playerView.js";
 import { bidLabel } from "../lib/faceNames.js";
+import { useTypewriter } from "../hooks/useTypewriter.js";
 
 export interface CurrentBidCardProps {
   bid: { quantity: number; face: 1 | 2 | 3 | 4 | 5 | 6 } | null;
   bidderName: string | null;
   /** Whoever acts next; "You" when it's the player. */
   actorName: string;
+  /** Type the bid out instead of showing it at once; `onTyped` fires when it's finished. */
+  typing?: boolean;
+  onTyped?: () => void;
 }
 
 function nextMoveHint(hasBid: boolean, actorName: string): string {
@@ -14,11 +18,19 @@ function nextMoveHint(hasBid: boolean, actorName: string): string {
   return isYou ? "Raise it, or call the bluff." : `${actorName} to raise or call.`;
 }
 
-export function CurrentBidCard({ bid, bidderName, actorName }: CurrentBidCardProps) {
+export function CurrentBidCard({ bid, bidderName, actorName, typing = false, onTyped }: CurrentBidCardProps) {
+  const label = bid ? bidLabel(bid.quantity, bid.face) : "";
+  const shownLabel = useTypewriter(label, typing && bid !== null, () => onTyped?.());
+  const hint = nextMoveHint(bid !== null, actorName);
+  // Screen readers get the finished bid once rather than every typed character.
+  const announcement = typing
+    ? ""
+    : bid
+      ? `Current bid${bidderName ? ` by ${bidderName}` : ""}: ${label}. ${hint}`
+      : `No bid yet. ${hint}`;
+
   return (
     <div
-      aria-live="polite"
-      aria-atomic="true"
       style={{
         flex: 1.3,
         minWidth: 0,
@@ -36,17 +48,24 @@ export function CurrentBidCard({ bid, bidderName, actorName }: CurrentBidCardPro
       <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em", color: "#7A6A4E" }}>
         Current bid{bidderName ? ` · ${bidderName}` : ""}
       </span>
+      <span className="visually-hidden" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </span>
       {bid ? (
-        <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 38, color: "var(--ink)" }}>
-          {bidLabel(bid.quantity, bid.face)}
+        <span
+          aria-hidden={typing}
+          style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 38, color: "var(--ink)" }}
+        >
+          {shownLabel}
+          {typing && <span className="typing-caret">|</span>}
         </span>
       ) : (
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 24, color: "var(--ink)", opacity: 0.75 }}>
           No bid yet
         </span>
       )}
-      <span style={{ fontSize: 13, color: "#7A6A4E", fontStyle: "italic" }}>
-        {nextMoveHint(bid !== null, actorName)}
+      <span style={{ fontSize: 13, color: "#7A6A4E", fontStyle: "italic", visibility: typing ? "hidden" : "visible" }}>
+        {hint}
       </span>
     </div>
   );

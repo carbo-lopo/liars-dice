@@ -22,10 +22,13 @@ export interface MainScreenProps {
   opponents: OpponentSeat[];
   isYourTurn: boolean;
   awaitingContinue: boolean;
+  thinkingBot: string | null;
+  typingBid: boolean;
   error: string | null;
   onPlaceBid: (bid: { quantity: number; face: Face }) => void;
   onCall: () => void;
   onContinueBotAction: () => void;
+  onBidTyped: () => void;
   onQuit: () => void;
   onRules: () => void;
 }
@@ -35,18 +38,23 @@ export function MainScreen({
   opponents,
   isYourTurn,
   awaitingContinue,
+  thinkingBot,
+  typingBid,
   error,
   onPlaceBid,
   onCall,
   onContinueBotAction,
+  onBidTyped,
   onQuit,
   onRules,
 }: MainScreenProps) {
   const [selectedFace, setSelectedFace] = useState<Face | null>(view.currentBid?.face ?? null);
 
   const bidderName = view.bidHistory.at(-1)?.bidder.name ?? null;
+  // A bot's bid joins the round's history only once it has finished typing out.
+  const shownHistory = typingBid ? view.bidHistory.slice(0, -1) : view.bidHistory;
   // On your turn the hand previews the face you're considering; otherwise it shows the bid on the table.
-  const highlightFace = isYourTurn ? selectedFace : (view.currentBid?.face ?? null);
+  const highlightFace = isYourTurn ? selectedFace : (shownHistory.at(-1)?.bid.face ?? null);
   const actorName = view.turnOrder[0]?.name ?? "";
 
   return (
@@ -137,8 +145,14 @@ export function MainScreen({
       </div>
 
       <div style={{ display: "flex", gap: 16, flex: 1, minHeight: 0 }}>
-        <CurrentBidCard bid={view.currentBid} bidderName={bidderName} actorName={actorName} />
-        <BidHistoryCard history={view.bidHistory} />
+        <CurrentBidCard
+          bid={view.currentBid}
+          bidderName={bidderName}
+          actorName={actorName}
+          typing={typingBid}
+          onTyped={onBidTyped}
+        />
+        <BidHistoryCard history={shownHistory} />
       </div>
 
       <HandRow dice={view.hand} selectedFace={highlightFace} onesWild={!view.isPalifico} />
@@ -166,7 +180,11 @@ export function MainScreen({
         </div>
       ) : (
         <div style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic" }}>
-          Waiting on {actorName}&hellip;
+          {thinkingBot
+            ? `${thinkingBot} is thinking…`
+            : typingBid
+              ? `${bidderName} is bidding…`
+              : `Waiting on ${actorName}…`}
         </div>
       )}
     </TableFrame>
