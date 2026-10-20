@@ -8,9 +8,8 @@ type AppScreen = "start" | "game";
 export default function App() {
   const [appScreen, setAppScreen] = useState<AppScreen>("start");
   const [rulesOpen, setRulesOpen] = useState(false);
-  // Whether the Rules screen's primary button should start a brand-new game
-  // ("Start Playing", opened from the start menu) or just close the overlay
-  // and resume the game underneath ("Resume Game", opened mid-game).
+  // Whether Rules was opened mid-game. From the start menu it offers
+  // "Start Playing"; mid-game its Back button returns to the game underneath.
   const [rulesOpenedFromGame, setRulesOpenedFromGame] = useState(false);
   // Bumped whenever a game is abandoned (Quit Game / Main Menu) so the next
   // "Play" mounts a fresh GameApp/engine instead of resuming the old one.

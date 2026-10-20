@@ -6,8 +6,8 @@ import type { ReactNode } from "react";
 
 export interface RulesScreenProps {
   onBack: () => void;
-  /** Omit when Rules was opened mid-game -- the bottom button then just
-   * resumes the game in progress instead of starting a new one. */
+  /** Starts a new game from the bottom button. Omitted when Rules was opened
+   * mid-game, where the Back button returns to the game in progress. */
   onPlay?: () => void;
 }
 
@@ -122,11 +122,13 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
         </RuleSection>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button type="button" onClick={onPlay ?? onBack} style={primaryButtonStyle}>
-          {onPlay ? "Start Playing" : "Resume Game"}
-        </button>
-      </div>
+      {onPlay && (
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button type="button" onClick={onPlay} style={primaryButtonStyle}>
+            Start Playing
+          </button>
+        </div>
+      )}
     </TableFrame>
   );
 }
