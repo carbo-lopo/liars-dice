@@ -10,6 +10,8 @@ export interface CurrentBidCardProps {
   /** Type the bid out instead of showing it at once; `onTyped` fires when it's finished. */
   typing?: boolean;
   onTyped?: () => void;
+  /** Name of the bot deciding its move, shown across the top of the card. */
+  thinkingBot?: string | null;
 }
 
 function nextMoveHint(hasBid: boolean, actorName: string): string {
@@ -18,7 +20,14 @@ function nextMoveHint(hasBid: boolean, actorName: string): string {
   return isYou ? "Raise it, or call the bluff." : `${actorName} to raise or call.`;
 }
 
-export function CurrentBidCard({ bid, bidderName, actorName, typing = false, onTyped }: CurrentBidCardProps) {
+export function CurrentBidCard({
+  bid,
+  bidderName,
+  actorName,
+  typing = false,
+  onTyped,
+  thinkingBot = null,
+}: CurrentBidCardProps) {
   const label = bid ? bidLabel(bid.quantity, bid.face) : "";
   const shownLabel = useTypewriter(label, typing && bid !== null, () => onTyped?.());
   const hint = nextMoveHint(bid !== null, actorName);
@@ -32,6 +41,7 @@ export function CurrentBidCard({ bid, bidderName, actorName, typing = false, onT
   return (
     <div
       style={{
+        position: "relative",
         flex: 1.3,
         minWidth: 0,
         background: "var(--parchment)",
@@ -45,6 +55,20 @@ export function CurrentBidCard({ bid, bidderName, actorName, typing = false, onT
         boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
       }}
     >
+      <span
+        role="status"
+        style={{
+          position: "absolute",
+          top: 14,
+          left: 22,
+          right: 22,
+          fontSize: 13,
+          fontStyle: "italic",
+          color: "#7A6A4E",
+        }}
+      >
+        {thinkingBot ? `${thinkingBot} is thinking…` : ""}
+      </span>
       <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em", color: "#7A6A4E" }}>
         Current bid{bidderName ? ` · ${bidderName}` : ""}
       </span>

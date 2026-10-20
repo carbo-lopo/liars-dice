@@ -151,6 +151,7 @@ export function MainScreen({
           actorName={actorName}
           typing={typingBid}
           onTyped={onBidTyped}
+          thinkingBot={thinkingBot}
         />
         <BidHistoryCard history={shownHistory} />
       </div>
@@ -172,19 +173,17 @@ export function MainScreen({
           onCall={onCall}
           onFaceChange={setSelectedFace}
         />
-      ) : awaitingContinue ? (
+      ) : (
+        // Rendered even while a bot moves, with the button hidden, so the board doesn't shift when Continue appears.
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
-          <button type="button" onClick={onContinueBotAction} style={continueButtonStyle}>
+          <button
+            type="button"
+            onClick={onContinueBotAction}
+            disabled={!awaitingContinue}
+            style={{ ...continueButtonStyle, visibility: awaitingContinue ? "visible" : "hidden" }}
+          >
             Continue
           </button>
-        </div>
-      ) : (
-        <div style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic" }}>
-          {thinkingBot
-            ? `${thinkingBot} is thinking…`
-            : typingBid
-              ? `${bidderName} is bidding…`
-              : `Waiting on ${actorName}…`}
         </div>
       )}
     </TableFrame>
