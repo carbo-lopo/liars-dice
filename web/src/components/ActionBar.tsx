@@ -101,6 +101,8 @@ export function ActionBar({
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
           <div
+            role="group"
+            aria-label={`Quantity, minimum ${minQty}`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -115,12 +117,16 @@ export function ActionBar({
               type="button"
               disabled={disabled || quantity <= minQty}
               onClick={() => setQuantity((q) => Math.max(minQty, q - 1))}
+              aria-label="Decrease quantity"
               style={stepperButtonStyle}
             >
               &minus;
             </button>
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Qty</span>
+            <span aria-hidden style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+              Qty
+            </span>
             <span
+              aria-live="polite"
               style={{
                 fontFamily: "var(--font-display)",
                 fontWeight: 700,
@@ -136,15 +142,18 @@ export function ActionBar({
               type="button"
               disabled={disabled}
               onClick={() => setQuantity((q) => q + 1)}
+              aria-label="Increase quantity"
               style={stepperButtonStyle}
             >
               &#43;
             </button>
           </div>
-          <span style={{ fontSize: 10, color: "var(--gold)", textAlign: "center" }}>min. {minQty}</span>
+          <span aria-hidden style={{ fontSize: 10, color: "var(--gold)", textAlign: "center" }}>
+            min. {minQty}
+          </span>
         </div>
 
-        <div style={{ display: "flex", gap: 6 }}>
+        <div role="group" aria-label="Face" style={{ display: "flex", gap: 6 }}>
           {ALL_FACES.map((face) => {
             const available = facesAvailable.includes(face);
             const isSelected = face === selectedFace;
@@ -155,6 +164,8 @@ export function ActionBar({
                 disabled={disabled || !available}
                 onClick={() => handleFaceClick(face)}
                 title={faceName(face)}
+                aria-label={faceName(face)}
+                aria-pressed={isSelected}
                 style={{
                   width: 32,
                   height: 32,
