@@ -8,6 +8,9 @@ const engineDir = fileURLToPath(new URL("../src", import.meta.url));
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 export default defineConfig({
+  // Relative asset paths, so the built site works from a subpath such as
+  // https://<user>.github.io/liars-dice/ as well as from a domain root.
+  base: "./",
   plugins: [react()],
   resolve: {
     alias: { "@engine": engineDir },
