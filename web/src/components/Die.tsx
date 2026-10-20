@@ -1,4 +1,5 @@
 import type { Face } from "@engine/types/face.js";
+import { faceName, singularFaceName } from "../lib/faceNames.js";
 
 // 3x3 pip grid, indices 0-8 left-to-right/top-to-bottom.
 const PIP_LAYOUTS: Record<Face, number[]> = {
@@ -10,21 +11,12 @@ const PIP_LAYOUTS: Record<Face, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
-const FACE_NAMES: Record<Face, string> = {
-  1: "Ace",
-  2: "Two",
-  3: "Three",
-  4: "Four",
-  5: "Five",
-  6: "Six",
-};
-
 export interface DieProps {
   face?: Face;
   faceDown?: boolean;
   size?: number;
-  /** Gold ring: this die is currently "counting" toward a bid/selection. */
-  highlighted?: boolean;
+  /** The face this die counts toward; the die gets a gold ring and says so in its label. */
+  countsToward?: Face;
   /** Hide from assistive technology when nearby text already conveys the information. */
   decorative?: boolean;
 }
@@ -33,7 +25,8 @@ function accessibilityProps(label: string, decorative: boolean) {
   return decorative ? { "aria-hidden": true } : { role: "img", "aria-label": label };
 }
 
-export function Die({ face, faceDown = false, size = 50, highlighted = false, decorative = false }: DieProps) {
+export function Die({ face, faceDown = false, size = 50, countsToward, decorative = false }: DieProps) {
+  const highlighted = countsToward !== undefined;
   const radius = Math.round(size * 0.16);
 
   if (faceDown || face === undefined) {
@@ -57,7 +50,10 @@ export function Die({ face, faceDown = false, size = 50, highlighted = false, de
   const pipSize = Math.max(4, Math.round(size * 0.16));
   const active = new Set(PIP_LAYOUTS[face]);
 
-  const label = highlighted ? `${FACE_NAMES[face]}, counts toward the bid` : FACE_NAMES[face];
+  const label =
+    countsToward === undefined
+      ? singularFaceName(face)
+      : `${singularFaceName(face)}, counts toward ${faceName(countsToward)}`;
 
   return (
     <div

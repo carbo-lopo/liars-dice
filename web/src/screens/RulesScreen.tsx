@@ -54,7 +54,7 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
           </p>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {([1, 3, 5, 1, 4] as Face[]).map((face, i) => (
-              <Die key={i} face={face} size={40} highlighted={face === 1 || face === 5} />
+              <Die key={i} face={face} size={40} countsToward={face === 1 || face === 5 ? 5 : undefined} />
             ))}
             <span style={{ fontSize: 13, color: "var(--text-secondary)", marginLeft: 8 }}>
               3 dice count toward &ldquo;Fives&rdquo;
@@ -192,7 +192,7 @@ function RevealRow({ name, dice, matchFace }: { name: string; dice: Face[]; matc
       <span style={{ width: 44, fontSize: 13, color: "var(--text-primary)", fontWeight: 600 }}>{name}</span>
       <div style={{ display: "flex", gap: 5 }}>
         {dice.map((d, i) => (
-          <Die key={i} face={d} size={32} highlighted={countsFor(d)} />
+          <Die key={i} face={d} size={32} countsToward={countsFor(d) ? matchFace : undefined} />
         ))}
       </div>
     </div>

@@ -60,7 +60,7 @@ export function RevealScreen({ resolution, onContinue, onQuit, onRules }: Reveal
               </span>
               <div style={{ display: "flex", gap: 6 }}>
                 {dice.map((d, i) => (
-                  <Die key={i} face={d} size={42} highlighted={countsFor(d)} />
+                  <Die key={i} face={d} size={42} countsToward={countsFor(d) ? face : undefined} />
                 ))}
               </div>
               <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{count} counted</span>

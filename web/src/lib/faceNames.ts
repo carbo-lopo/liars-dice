@@ -25,6 +25,11 @@ export function faceName(face: Face): string {
   return PLURAL_NAMES[face];
 }
 
+/** Name for a single die showing this face ("Five"). */
+export function singularFaceName(face: Face): string {
+  return SINGULAR_NAMES[face];
+}
+
 /** Name to use when the face is attached to a specific count ("1 Five" vs "4 Fives"). */
 export function faceNameForCount(face: Face, count: number): string {
   return count === 1 ? SINGULAR_NAMES[face] : PLURAL_NAMES[face];

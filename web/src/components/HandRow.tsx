@@ -17,7 +17,7 @@ export function HandRow({ dice, selectedFace, onesWild, label = "Your hand", siz
         {dice.map((face, i) => {
           const counts =
             selectedFace != null && (face === selectedFace || (onesWild && face === 1 && selectedFace !== 1));
-          return <Die key={i} face={face} size={size} highlighted={counts} />;
+          return <Die key={i} face={face} size={size} countsToward={counts ? selectedFace : undefined} />;
         })}
       </div>
     </div>
