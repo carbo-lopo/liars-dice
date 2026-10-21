@@ -1,10 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { prefersReducedMotion } from "../lib/motion.js";
 
 const MS_PER_CHARACTER = 120;
-
-function prefersReducedMotion(): boolean {
-  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-}
 
 /**
  * Reveals `text` one character at a time while `active` is true, then calls

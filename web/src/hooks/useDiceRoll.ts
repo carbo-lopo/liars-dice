@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Face } from "@engine/types/face.js";
+import { prefersReducedMotion } from "../lib/motion.js";
 
 /** How often a still-spinning die shows a new random face. */
 const SPIN_FRAME_MS = 200;
@@ -9,10 +10,6 @@ const FIRST_LANDING_MS = 1000;
 const LANDING_GAP_MS = 400;
 /** Pause after the last die lands before the roll counts as finished. */
 const SETTLE_MS = 500;
-
-function prefersReducedMotion(): boolean {
-  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-}
 
 function randomFaces(count: number): Face[] {
   return Array.from({ length: count }, () => (Math.floor(Math.random() * 6) + 1) as Face);
