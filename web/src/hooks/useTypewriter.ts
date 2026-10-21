@@ -1,10 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { prefersReducedMotion } from "../lib/motion.js";
+import { useLatestRef } from "./useLatestRef.js";
 
 const MS_PER_CHARACTER = 120;
-
-function prefersReducedMotion(): boolean {
-  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-}
 
 /**
  * Reveals `text` one character at a time while `active` is true, then calls
@@ -13,8 +11,7 @@ function prefersReducedMotion(): boolean {
  */
 export function useTypewriter(text: string, active: boolean, onDone: () => void): string {
   const [shown, setShown] = useState(active ? 0 : text.length);
-  const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+  const onDoneRef = useLatestRef(onDone);
 
   // Reset before paint so the finished text never flashes before typing starts.
   useLayoutEffect(() => {

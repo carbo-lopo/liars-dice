@@ -110,3 +110,40 @@ button {
     opacity: 0;
   }
 }
+
+@keyframes die-shake {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}
+
+@keyframes die-land {
+  0% {
+    transform: translateY(-6px) scale(1.18);
+  }
+  60% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.die-rolling {
+  animation: die-shake 0.18s ease-in-out infinite;
+}
+
+.die-landed {
+  animation: die-land 0.28s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .die-rolling,
+  .die-landed {
+    animation: none;
+  }
+}

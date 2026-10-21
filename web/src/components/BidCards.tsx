@@ -10,8 +10,8 @@ export interface CurrentBidCardProps {
   /** Type the bid out instead of showing it at once; `onTyped` fires when it's finished. */
   typing?: boolean;
   onTyped?: () => void;
-  /** Name of the bot deciding its move, shown across the top of the card. */
-  thinkingBot?: string | null;
+  /** A short status line across the top of the card, e.g. who is thinking. */
+  status?: string | null;
 }
 
 function nextMoveHint(hasBid: boolean, actorName: string): string {
@@ -26,7 +26,7 @@ export function CurrentBidCard({
   actorName,
   typing = false,
   onTyped,
-  thinkingBot = null,
+  status = null,
 }: CurrentBidCardProps) {
   const label = bid ? bidLabel(bid.quantity, bid.face) : "";
   const shownLabel = useTypewriter(label, typing && bid !== null, () => onTyped?.());
@@ -67,7 +67,7 @@ export function CurrentBidCard({
           color: "#7A6A4E",
         }}
       >
-        {thinkingBot ? `${thinkingBot} is thinking…` : ""}
+        {status ?? ""}
       </span>
       <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.08em", color: "#7A6A4E" }}>
         Current bid{bidderName ? ` · ${bidderName}` : ""}

@@ -19,13 +19,24 @@ export interface DieProps {
   countsToward?: Face;
   /** Hide from assistive technology when nearby text already conveys the information. */
   decorative?: boolean;
+  /** Still being rolled: the face shown is not the die's value yet. */
+  spinning?: boolean;
+  className?: string;
 }
 
 function accessibilityProps(label: string, decorative: boolean) {
   return decorative ? { "aria-hidden": true } : { role: "img", "aria-label": label };
 }
 
-export function Die({ face, faceDown = false, size = 50, countsToward, decorative = false }: DieProps) {
+export function Die({
+  face,
+  faceDown = false,
+  size = 50,
+  countsToward,
+  decorative = false,
+  spinning = false,
+  className,
+}: DieProps) {
   const highlighted = countsToward !== undefined;
   const radius = Math.round(size * 0.16);
 
@@ -50,14 +61,16 @@ export function Die({ face, faceDown = false, size = 50, countsToward, decorativ
   const pipSize = Math.max(4, Math.round(size * 0.16));
   const active = new Set(PIP_LAYOUTS[face]);
 
-  const label =
-    countsToward === undefined
+  const label = spinning
+    ? "Rolling die"
+    : countsToward === undefined
       ? singularFaceName(face)
       : `${singularFaceName(face)}, counts toward ${faceName(countsToward)}`;
 
   return (
     <div
       {...accessibilityProps(label, decorative)}
+      className={className}
       style={{
         width: size,
         height: size,

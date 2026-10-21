@@ -15,6 +15,8 @@ export type Screen = "main" | "reveal" | "gameover";
  * setPhase call, so exactly one of these holds at a time.
  */
 export type GamePhase =
+  /** A new round's dice are being rolled on screen before anyone acts. */
+  | { kind: "rolling" }
   /** The player chooses a bid or calls. */
   | { kind: "yourTurn" }
   /** A bot is about to act after a short pause. */
@@ -50,6 +52,8 @@ export interface UseGameApi {
   phase: GamePhase;
   screen: Screen;
   isYourTurn: boolean;
+  /** The start-of-round roll is playing. */
+  rolling: boolean;
   /** A bot has already acted and is waiting on the player to acknowledge it. */
   awaitingContinue: boolean;
   /** Name of the bot currently deciding its action, if any. */
@@ -62,6 +66,8 @@ export interface UseGameApi {
   placeBid: (bid: Bid) => void;
   call: () => void;
   continueAfterBotAction: () => void;
+  /** Called by the UI once the start-of-round roll has finished. */
+  finishRolling: () => void;
   /** Called by the UI once the latest bid has finished typing out. */
   finishTyping: () => void;
   continueAfterReveal: () => void;
@@ -120,6 +126,7 @@ function phaseAfterAction(events: readonly GameEvent[], byHuman: boolean): GameP
 function screenFor(phase: GamePhase): Screen {
   // Every phase is listed so that adding one is a compile error until it's given a screen.
   switch (phase.kind) {
+    case "rolling":
     case "yourTurn":
     case "botThinking":
     case "typingBid":
@@ -137,7 +144,7 @@ export function useGame(): UseGameApi {
   if (engineRef.current === null) engineRef.current = createEngine();
   const engine = engineRef.current;
 
-  const [phase, setPhase] = useState<GamePhase>(() => nextTurnPhase(engine));
+  const [phase, setPhase] = useState<GamePhase>({ kind: "rolling" });
   // Bumped after every engine change so the memoised view is recomputed.
   const [version, setVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -165,6 +172,10 @@ export function useGame(): UseGameApi {
     setPhase(nextTurnPhase(engineRef.current!));
   }, []);
 
+  const finishRolling = useCallback(() => {
+    setPhase((current) => (current.kind === "rolling" ? nextTurnPhase(engineRef.current!) : current));
+  }, []);
+
   const finishTyping = useCallback(() => {
     // A bot's bid waits for "Continue"; after the player's own bid the next bot starts thinking.
     setPhase((current) =>
@@ -178,14 +189,14 @@ export function useGame(): UseGameApi {
 
   const continueAfterReveal = useCallback(() => {
     setPhase((current) =>
-      current.kind === "reveal" && current.gameOverAfter ? { kind: "gameOver" } : nextTurnPhase(engineRef.current!),
+      current.kind === "reveal" && current.gameOverAfter ? { kind: "gameOver" } : { kind: "rolling" },
     );
   }, []);
 
   const playAgain = useCallback(() => {
     engineRef.current = createEngine();
     setError(null);
-    setPhase(nextTurnPhase(engineRef.current));
+    setPhase({ kind: "rolling" });
     bump();
   }, [bump]);
 
@@ -246,6 +257,7 @@ export function useGame(): UseGameApi {
     phase,
     screen: screenFor(phase),
     isYourTurn: phase.kind === "yourTurn",
+    rolling: phase.kind === "rolling",
     awaitingContinue: phase.kind === "awaitingContinue",
     thinkingBot: phase.kind === "botThinking" ? phase.bot : null,
     typingBid: phase.kind === "typingBid",
@@ -255,6 +267,7 @@ export function useGame(): UseGameApi {
     placeBid,
     call,
     continueAfterBotAction,
+    finishRolling,
     finishTyping,
     continueAfterReveal,
     playAgain,

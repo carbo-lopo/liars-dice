@@ -23,12 +23,14 @@ export interface MainScreenProps {
   isYourTurn: boolean;
   awaitingContinue: boolean;
   thinkingBot: string | null;
+  rolling: boolean;
   typingBid: boolean;
   error: string | null;
   onPlaceBid: (bid: { quantity: number; face: Face }) => void;
   onCall: () => void;
   onContinueBotAction: () => void;
   onBidTyped: () => void;
+  onRolled: () => void;
   onQuit: () => void;
   onRules: () => void;
 }
@@ -39,12 +41,14 @@ export function MainScreen({
   isYourTurn,
   awaitingContinue,
   thinkingBot,
+  rolling,
   typingBid,
   error,
   onPlaceBid,
   onCall,
   onContinueBotAction,
   onBidTyped,
+  onRolled,
   onQuit,
   onRules,
 }: MainScreenProps) {
@@ -151,12 +155,18 @@ export function MainScreen({
           actorName={actorName}
           typing={typingBid}
           onTyped={onBidTyped}
-          thinkingBot={thinkingBot}
+          status={rolling ? "Rolling…" : thinkingBot ? `${thinkingBot} is thinking…` : null}
         />
         <BidHistoryCard history={shownHistory} />
       </div>
 
-      <HandRow dice={view.hand} selectedFace={highlightFace} onesWild={!view.isPalifico} />
+      <HandRow
+        dice={view.hand}
+        selectedFace={highlightFace}
+        onesWild={!view.isPalifico}
+        rolling={rolling}
+        onRolled={onRolled}
+      />
 
       {error && (
         <div role="alert" style={{ color: "var(--text-primary)", background: "rgba(154,58,44,0.5)", padding: "8px 12px", borderRadius: 8, fontSize: 13 }}>
