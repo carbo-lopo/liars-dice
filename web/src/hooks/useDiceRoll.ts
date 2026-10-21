@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import type { Face } from "@engine/types/face.js";
 import { prefersReducedMotion } from "../lib/motion.js";
+import { useLatestRef } from "./useLatestRef.js";
 
 /** How often a still-spinning die shows a new random face. */
 const SPIN_FRAME_MS = 200;
@@ -31,8 +32,7 @@ export interface DiceRoll {
 export function useDiceRoll(count: number, active: boolean, onDone: () => void): DiceRoll {
   const [landed, setLanded] = useState(active ? 0 : count);
   const [spinFaces, setSpinFaces] = useState<Face[]>(() => randomFaces(count));
-  const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+  const onDoneRef = useLatestRef(onDone);
 
   // Reset before paint so the real faces never flash before the roll starts.
   useLayoutEffect(() => {
