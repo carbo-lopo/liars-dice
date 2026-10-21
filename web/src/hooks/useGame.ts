@@ -17,7 +17,7 @@ export type Screen = "main" | "reveal" | "gameover";
 export type GamePhase =
   /** The player chooses a bid or calls. */
   | { kind: "yourTurn" }
-  /** A bot is about to move after a short pause. */
+  /** A bot is about to act after a short pause. */
   | { kind: "botThinking"; bot: string }
   /** The latest bid is being typed out on screen. */
   | { kind: "typingBid"; byHuman: boolean }
@@ -52,7 +52,7 @@ export interface UseGameApi {
   isYourTurn: boolean;
   /** A bot has already acted and is waiting on the player to acknowledge it. */
   awaitingContinue: boolean;
-  /** Name of the bot currently deciding its move, if any. */
+  /** Name of the bot currently deciding its action, if any. */
   thinkingBot: string | null;
   /** The latest bid was just placed and is still being typed out on screen. */
   typingBid: boolean;
@@ -90,18 +90,21 @@ function apply(engine: GameEngine, action: PlayerAction): GameEvent[] {
 }
 
 /**
- * The phase the hook enters whenever the game is ready for its next turn: the
- * human's input if it is their turn, otherwise a bot thinking, or game over.
- * Used internally to drive the UI state; the engine knows nothing about phases.
+ * The phase to enter once the engine is ready for its next turn: waiting on the
+ * player, a bot thinking, or game over. Phases belong to this hook and drive
+ * what the screens show; the engine knows nothing about them.
  */
-function turnPhase(engine: GameEngine): GamePhase {
+function nextTurnPhase(engine: GameEngine): GamePhase {
   const { game } = engine;
   if (game.isOver) return { kind: "gameOver" };
   const player = game.round.currentPlayer;
   return player.isHuman ? { kind: "yourTurn" } : { kind: "botThinking", bot: player.name };
 }
 
-/** The phase after a player (human or bot) bids or calls: a call reveals the dice, a bid is typed out in the log. */
+/**
+ * The phase after a player, human or bot, bids or calls: a call reveals the
+ * dice, and a bid is typed out in the Current Bid card.
+ */
 function phaseAfterAction(events: readonly GameEvent[], byHuman: boolean): GamePhase {
   const revealed = events.find((e): e is DiceRevealed => e instanceof DiceRevealed);
   if (revealed) {
@@ -115,13 +118,17 @@ function phaseAfterAction(events: readonly GameEvent[], byHuman: boolean): GameP
 }
 
 function screenFor(phase: GamePhase): Screen {
+  // Every phase is listed so that adding one is a compile error until it's given a screen.
   switch (phase.kind) {
+    case "yourTurn":
+    case "botThinking":
+    case "typingBid":
+    case "awaitingContinue":
+      return "main";
     case "reveal":
       return "reveal";
     case "gameOver":
       return "gameover";
-    default:
-      return "main";
   }
 }
 
@@ -130,7 +137,7 @@ export function useGame(): UseGameApi {
   if (engineRef.current === null) engineRef.current = createEngine();
   const engine = engineRef.current;
 
-  const [phase, setPhase] = useState<GamePhase>(() => turnPhase(engine));
+  const [phase, setPhase] = useState<GamePhase>(() => nextTurnPhase(engine));
   // Bumped after every engine change so the memoised view is recomputed.
   const [version, setVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -155,7 +162,7 @@ export function useGame(): UseGameApi {
   const call = useCallback(() => humanAction((engine) => engine.call()), [humanAction]);
 
   const continueAfterBotAction = useCallback(() => {
-    setPhase(turnPhase(engineRef.current!));
+    setPhase(nextTurnPhase(engineRef.current!));
   }, []);
 
   const finishTyping = useCallback(() => {
@@ -164,26 +171,26 @@ export function useGame(): UseGameApi {
       current.kind !== "typingBid"
         ? current
         : current.byHuman
-          ? turnPhase(engineRef.current!)
+          ? nextTurnPhase(engineRef.current!)
           : { kind: "awaitingContinue" },
     );
   }, []);
 
   const continueAfterReveal = useCallback(() => {
     setPhase((current) =>
-      current.kind === "reveal" && current.gameOverAfter ? { kind: "gameOver" } : turnPhase(engineRef.current!),
+      current.kind === "reveal" && current.gameOverAfter ? { kind: "gameOver" } : nextTurnPhase(engineRef.current!),
     );
   }, []);
 
   const playAgain = useCallback(() => {
     engineRef.current = createEngine();
     setError(null);
-    setPhase(turnPhase(engineRef.current));
+    setPhase(nextTurnPhase(engineRef.current));
     bump();
   }, [bump]);
 
-  // A bot moves only when its thinking pause runs out. Leaving the phase first
-  // (e.g. unmounting, or StrictMode's test cleanup) cancels the move.
+  // A bot acts only when its thinking pause runs out. Leaving the phase first
+  // (e.g. unmounting, or StrictMode's test cleanup) cancels the action.
   useEffect(() => {
     if (phase.kind !== "botThinking") return;
     const timer = window.setTimeout(() => {
@@ -194,7 +201,7 @@ export function useGame(): UseGameApi {
       try {
         events = apply(engine, bot.strategy!.decide(view));
       } catch (err) {
-        // Bots are tested to only make legal moves; if one slips through, call rather than stall the game.
+        // Bots are tested to only take legal actions; if one slips through, call rather than stall the game.
         if (err instanceof IllegalActionError && view.currentBid) events = engine.call();
         else throw err;
       }
