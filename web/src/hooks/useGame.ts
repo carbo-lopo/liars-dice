@@ -10,6 +10,23 @@ import type { PlayerView } from "@engine/types/playerView.js";
 
 export type Screen = "main" | "reveal" | "gameover";
 
+/**
+ * Where the game's on-screen flow currently is. Every transition is an explicit
+ * setPhase call, so exactly one of these holds at a time.
+ */
+export type GamePhase =
+  /** The player chooses a bid or calls. */
+  | { kind: "yourTurn" }
+  /** A bot is about to move after a short pause. */
+  | { kind: "botThinking"; bot: string }
+  /** The latest bid is being typed out on screen. */
+  | { kind: "typingBid"; byHuman: boolean }
+  /** A bot has bid; the player presses Continue to move on. */
+  | { kind: "awaitingContinue" }
+  /** A challenge was resolved and the dice are shown. */
+  | { kind: "reveal"; resolution: ChallengeResolution; gameOverAfter: boolean }
+  | { kind: "gameOver" };
+
 /** What the table shows about an opponent: public information only, never their dice. */
 export interface OpponentSeat {
   name: string;
@@ -30,6 +47,7 @@ export interface GameResult {
 export interface UseGameApi {
   view: PlayerView;
   opponents: OpponentSeat[];
+  phase: GamePhase;
   screen: Screen;
   isYourTurn: boolean;
   /** A bot has already acted and is waiting on the player to acknowledge it. */
@@ -71,114 +89,97 @@ function apply(engine: GameEngine, action: PlayerAction): GameEvent[] {
   return action.type === "call" ? engine.call() : engine.bid(action.bid);
 }
 
-export function useGame(): UseGameApi {
-  const engineRef = useRef<GameEngine>(createEngine());
-  const [version, setVersion] = useState(0);
-  const [screen, setScreen] = useState<Screen>("main");
-  const [resolution, setResolution] = useState<ChallengeResolution | null>(null);
-  const [pendingGameOver, setPendingGameOver] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [awaitingContinue, setAwaitingContinue] = useState(false);
-  const [thinkingBot, setThinkingBot] = useState<string | null>(null);
-  const [typingBid, setTypingBid] = useState(false);
+/** The phase for whoever acts next in the engine's current round. */
+function turnPhase(engine: GameEngine): GamePhase {
+  const { game } = engine;
+  if (game.isOver) return { kind: "gameOver" };
+  const player = game.round.currentPlayer;
+  return player.isHuman ? { kind: "yourTurn" } : { kind: "botThinking", bot: player.name };
+}
 
-  // Guards the bot-turn effect against acting twice on the same game state,
-  // e.g. React StrictMode running effects twice in development.
-  const lastActedSignatureRef = useRef<string | null>(null);
+/** The phase that follows a move: a challenge's reveal, or typing out the new bid. */
+function phaseAfterMove(events: readonly GameEvent[], byHuman: boolean): GamePhase {
+  const revealed = events.find((e): e is DiceRevealed => e instanceof DiceRevealed);
+  if (revealed) {
+    return {
+      kind: "reveal",
+      resolution: revealed.resolution,
+      gameOverAfter: events.some((e) => e instanceof GameOver),
+    };
+  }
+  return { kind: "typingBid", byHuman };
+}
+
+function screenFor(phase: GamePhase): Screen {
+  if (phase.kind === "reveal") return "reveal";
+  if (phase.kind === "gameOver") return "gameover";
+  return "main";
+}
+
+export function useGame(): UseGameApi {
+  const engineRef = useRef<GameEngine | null>(null);
+  if (engineRef.current === null) engineRef.current = createEngine();
+  const engine = engineRef.current;
+
+  const [phase, setPhase] = useState<GamePhase>(() => turnPhase(engine));
+  // Bumped after every engine change so the memoised view is recomputed.
+  const [version, setVersion] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const bump = useCallback(() => setVersion((n) => n + 1), []);
-
-  const handleEvents = useCallback((events: readonly GameEvent[]) => {
-    for (const event of events) {
-      if (event instanceof DiceRevealed) {
-        setResolution(event.resolution);
-        setScreen("reveal");
-      }
-      if (event instanceof GameOver) {
-        setPendingGameOver(true);
-      }
-    }
-  }, []);
 
   const humanAction = useCallback(
     (act: (engine: GameEngine) => GameEvent[]) => {
       setError(null);
       try {
-        handleEvents(act(engineRef.current));
+        setPhase(phaseAfterMove(act(engineRef.current!), true));
         bump();
       } catch (err) {
         if (err instanceof IllegalActionError) setError(err.message);
         else throw err;
       }
     },
-    [handleEvents, bump],
+    [bump],
   );
 
-  const placeBid = useCallback(
-    (bid: Bid) =>
-      humanAction((engine) => {
-        const events = engine.bid(bid);
-        setTypingBid(true);
-        return events;
-      }),
-    [humanAction],
-  );
+  const placeBid = useCallback((bid: Bid) => humanAction((engine) => engine.bid(bid)), [humanAction]);
   const call = useCallback(() => humanAction((engine) => engine.call()), [humanAction]);
 
   const continueAfterBotAction = useCallback(() => {
-    setAwaitingContinue(false);
-    bump();
-  }, [bump]);
+    setPhase(turnPhase(engineRef.current!));
+  }, []);
 
   const finishTyping = useCallback(() => {
-    const bidder = engineRef.current.game.round.bidHistory.at(-1)?.bidder;
-    setTypingBid(false);
     // A bot's bid waits for "Continue"; after the player's own bid the next bot starts thinking.
-    if (bidder && !bidder.isHuman) setAwaitingContinue(true);
+    setPhase((current) =>
+      current.kind !== "typingBid"
+        ? current
+        : current.byHuman
+          ? turnPhase(engineRef.current!)
+          : { kind: "awaitingContinue" },
+    );
   }, []);
 
   const continueAfterReveal = useCallback(() => {
-    setResolution(null);
-    setScreen(pendingGameOver ? "gameover" : "main");
-    setPendingGameOver(false);
-    bump();
-  }, [pendingGameOver, bump]);
+    setPhase((current) =>
+      current.kind === "reveal" && current.gameOverAfter ? { kind: "gameOver" } : turnPhase(engineRef.current!),
+    );
+  }, []);
 
   const playAgain = useCallback(() => {
     engineRef.current = createEngine();
-    lastActedSignatureRef.current = null;
-    setResolution(null);
-    setPendingGameOver(false);
     setError(null);
-    setAwaitingContinue(false);
-    setThinkingBot(null);
-    setTypingBid(false);
-    setScreen("main");
+    setPhase(turnPhase(engineRef.current));
     bump();
   }, [bump]);
 
-  // Runs exactly one bot move whenever it's a bot's turn on the main screen and
-  // nothing is waiting on the player. The bot "thinks" for a short delay first.
-  // A bot bid is then typed out by the UI, which calls finishTyping; a bot call
-  // goes straight to the reveal screen.
+  // A bot moves only when its thinking pause runs out. Leaving the phase first
+  // (e.g. unmounting, or StrictMode's test cleanup) cancels the move.
   useEffect(() => {
-    if (screen !== "main" || awaitingContinue || typingBid) return;
-    const engine = engineRef.current;
-    const { game } = engine;
-    if (game.isOver) return;
-    const bot = game.round.currentPlayer;
-    if (bot.strategy === null) return;
-
-    const round = game.round;
-    const signature = `${round.index}:${round.bidHistory.length}:${bot.name}`;
-    if (lastActedSignatureRef.current === signature) return;
-    lastActedSignatureRef.current = signature;
-
-    setThinkingBot(bot.name);
-    let moved = false;
+    if (phase.kind !== "botThinking") return;
     const timer = window.setTimeout(() => {
-      moved = true;
-      setThinkingBot(null);
+      const engine = engineRef.current!;
+      const bot = engine.game.round.currentPlayer;
       const view = engine.viewFor(bot);
       let events: GameEvent[];
       try {
@@ -188,29 +189,19 @@ export function useGame(): UseGameApi {
         if (err instanceof IllegalActionError && view.currentBid) events = engine.call();
         else throw err;
       }
-      handleEvents(events);
-      if (!events.some((e) => e instanceof DiceRevealed)) setTypingBid(true);
+      setPhase(phaseAfterMove(events, false));
       bump();
     }, thinkingDelay());
+    return () => window.clearTimeout(timer);
+  }, [phase, bump]);
 
-    return () => {
-      window.clearTimeout(timer);
-      // A move cancelled before it happened (unmount, StrictMode's test cleanup)
-      // must be allowed to run again on the next pass.
-      if (!moved && lastActedSignatureRef.current === signature) {
-        lastActedSignatureRef.current = null;
-        setThinkingBot(null);
-      }
-    };
-  }, [screen, awaitingContinue, typingBid, version, handleEvents, bump]);
-
-  const { game } = engineRef.current;
+  const { game } = engine;
   const human = game.players.find((p) => p.isHuman)!;
 
   const view = useMemo(
-    () => engineRef.current.viewFor(human),
+    () => engine.viewFor(human),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [version],
+    [engine, version],
   );
 
   const opponents: OpponentSeat[] = game.players
@@ -233,17 +224,16 @@ export function useGame(): UseGameApi {
       }
     : null;
 
-  const isYourTurn = !game.isOver && game.round.currentPlayer.isHuman && !awaitingContinue && !typingBid;
-
   return {
     view,
     opponents,
-    screen,
-    isYourTurn,
-    awaitingContinue,
-    thinkingBot,
-    typingBid,
-    resolution,
+    phase,
+    screen: screenFor(phase),
+    isYourTurn: phase.kind === "yourTurn",
+    awaitingContinue: phase.kind === "awaitingContinue",
+    thinkingBot: phase.kind === "botThinking" ? phase.bot : null,
+    typingBid: phase.kind === "typingBid",
+    resolution: phase.kind === "reveal" ? phase.resolution : null,
     result,
     error,
     placeBid,
