@@ -89,7 +89,11 @@ function apply(engine: GameEngine, action: PlayerAction): GameEvent[] {
   return action.type === "call" ? engine.call() : engine.bid(action.bid);
 }
 
-/** The phase for whoever acts next in the engine's current round. */
+/**
+ * The phase the hook enters whenever the game is ready for its next turn: the
+ * human's input if it is their turn, otherwise a bot thinking, or game over.
+ * Used internally to drive the UI state; the engine knows nothing about phases.
+ */
 function turnPhase(engine: GameEngine): GamePhase {
   const { game } = engine;
   if (game.isOver) return { kind: "gameOver" };
@@ -97,8 +101,8 @@ function turnPhase(engine: GameEngine): GamePhase {
   return player.isHuman ? { kind: "yourTurn" } : { kind: "botThinking", bot: player.name };
 }
 
-/** The phase that follows a move: a challenge's reveal, or typing out the new bid. */
-function phaseAfterMove(events: readonly GameEvent[], byHuman: boolean): GamePhase {
+/** The phase after a player (human or bot) bids or calls: a call reveals the dice, a bid is typed out in the log. */
+function phaseAfterAction(events: readonly GameEvent[], byHuman: boolean): GamePhase {
   const revealed = events.find((e): e is DiceRevealed => e instanceof DiceRevealed);
   if (revealed) {
     return {
@@ -111,9 +115,14 @@ function phaseAfterMove(events: readonly GameEvent[], byHuman: boolean): GamePha
 }
 
 function screenFor(phase: GamePhase): Screen {
-  if (phase.kind === "reveal") return "reveal";
-  if (phase.kind === "gameOver") return "gameover";
-  return "main";
+  switch (phase.kind) {
+    case "reveal":
+      return "reveal";
+    case "gameOver":
+      return "gameover";
+    default:
+      return "main";
+  }
 }
 
 export function useGame(): UseGameApi {
@@ -132,7 +141,7 @@ export function useGame(): UseGameApi {
     (act: (engine: GameEngine) => GameEvent[]) => {
       setError(null);
       try {
-        setPhase(phaseAfterMove(act(engineRef.current!), true));
+        setPhase(phaseAfterAction(act(engineRef.current!), true));
         bump();
       } catch (err) {
         if (err instanceof IllegalActionError) setError(err.message);
@@ -189,7 +198,7 @@ export function useGame(): UseGameApi {
         if (err instanceof IllegalActionError && view.currentBid) events = engine.call();
         else throw err;
       }
-      setPhase(phaseAfterMove(events, false));
+      setPhase(phaseAfterAction(events, false));
       bump();
     }, thinkingDelay());
     return () => window.clearTimeout(timer);
