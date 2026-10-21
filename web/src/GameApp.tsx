@@ -16,6 +16,7 @@ export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
     isYourTurn,
     awaitingContinue,
     thinkingBot,
+    rolling,
     typingBid,
     resolution,
     result,
@@ -23,6 +24,7 @@ export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
     placeBid,
     call,
     continueAfterBotAction,
+    finishRolling,
     finishTyping,
     continueAfterReveal,
     playAgain,
@@ -50,12 +52,14 @@ export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
       isYourTurn={isYourTurn}
       awaitingContinue={awaitingContinue}
       thinkingBot={thinkingBot}
+      rolling={rolling}
       typingBid={typingBid}
       error={error}
       onPlaceBid={placeBid}
       onCall={call}
       onContinueBotAction={continueAfterBotAction}
       onBidTyped={finishTyping}
+      onRolled={finishRolling}
       onQuit={onMainMenu}
       onRules={onOpenRules}
     />
