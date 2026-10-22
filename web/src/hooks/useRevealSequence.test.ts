@@ -1,0 +1,59 @@
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { preferReducedMotion } from "../test/motion";
+import { StrictWrapper } from "../test/strictMode";
+import { FIRST_REVEAL_MS, NEXT_HAND_MS, REVEAL_GAP_MS, VERDICT_MS, useRevealSequence } from "./useRevealSequence";
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+function renderSequence(handSizes: number[], active = true) {
+  return renderHook(() => useRevealSequence(handSizes, active), { wrapper: StrictWrapper });
+}
+
+describe("useRevealSequence", () => {
+  it("turns dice up one at a time, pausing between hands, then shows the verdict", () => {
+    const { result } = renderSequence([2, 1]);
+    expect(result.current).toEqual({ revealed: 0, verdictShown: false });
+
+    act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS));
+    expect(result.current.revealed).toBe(1);
+    act(() => vi.advanceTimersByTime(REVEAL_GAP_MS));
+    expect(result.current.revealed).toBe(2);
+
+    // The second hand waits for the gap plus the pause between hands.
+    act(() => vi.advanceTimersByTime(REVEAL_GAP_MS));
+    expect(result.current.revealed).toBe(2);
+    act(() => vi.advanceTimersByTime(NEXT_HAND_MS));
+    expect(result.current.revealed).toBe(3);
+    expect(result.current.verdictShown).toBe(false);
+
+    act(() => vi.advanceTimersByTime(VERDICT_MS - 1));
+    expect(result.current.verdictShown).toBe(false);
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current).toEqual({ revealed: 3, verdictShown: true });
+  });
+
+  it("shows everything at once when inactive", () => {
+    const { result } = renderSequence([5, 4, 3], false);
+    expect(result.current).toEqual({ revealed: 12, verdictShown: true });
+  });
+
+  it("shows everything at once for users who prefer reduced motion", () => {
+    preferReducedMotion();
+    const { result } = renderSequence([5, 4]);
+    expect(result.current).toEqual({ revealed: 9, verdictShown: true });
+  });
+
+  it("stops when unmounted part-way", () => {
+    const { unmount } = renderSequence([3, 3]);
+    act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS));
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
