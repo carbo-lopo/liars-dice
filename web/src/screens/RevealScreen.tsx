@@ -5,8 +5,7 @@ import { TableFrame } from "../components/TableFrame.js";
 import { Die } from "../components/Die.js";
 import { bidLabel, faceNameForCount } from "../lib/faceNames.js";
 import { conjugate } from "../lib/grammar.js";
-import { QuitButton } from "../components/QuitButton.js";
-import { RulesButton } from "../components/RulesButton.js";
+import { HeaderButton } from "../components/HeaderButton.js";
 
 export interface RevealScreenProps {
   resolution: ChallengeResolution;
@@ -33,8 +32,8 @@ export function RevealScreen({ resolution, onContinue, onQuit, onRules }: Reveal
   return (
     <TableFrame>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-        <RulesButton onClick={onRules} />
-        <QuitButton onClick={onQuit} />
+        <HeaderButton onClick={onRules}>Rules</HeaderButton>
+        <HeaderButton onClick={onQuit}>Quit Game</HeaderButton>
       </div>
 
       <div

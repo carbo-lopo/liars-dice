@@ -7,8 +7,7 @@ import { CurrentBidCard, BidHistoryCard } from "../components/BidCards.js";
 import { HandRow } from "../components/HandRow.js";
 import { ActionBar } from "../components/ActionBar.js";
 import { PalificoIcon } from "../components/PalificoIcon.js";
-import { QuitButton } from "../components/QuitButton.js";
-import { RulesButton } from "../components/RulesButton.js";
+import { HeaderButton } from "../components/HeaderButton.js";
 import { useState } from "react";
 
 const PERSONALITY_ACCENT: Record<string, string> = {
@@ -80,8 +79,8 @@ export function MainScreen({
           >
             Round {view.roundNumber + 1}
           </span>
-          <RulesButton onClick={onRules} />
-          <QuitButton onClick={onQuit} />
+          <HeaderButton onClick={onRules}>Rules</HeaderButton>
+          <HeaderButton onClick={onQuit}>Quit Game</HeaderButton>
         </div>
       </div>
 
