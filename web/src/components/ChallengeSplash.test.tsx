@@ -31,31 +31,31 @@ afterEach(() => {
 
 describe("ChallengeSplash", () => {
   it("names who called whose bid, without the button in the announcement", () => {
-    render(<ChallengeSplash resolution={callOn(cora, duke)} onDone={() => {}} />);
+    render(<ChallengeSplash resolution={callOn(cora, duke)} onContinue={() => {}} />);
     const alert = screen.getByRole("alert").textContent;
     expect(alert).toContain("Duke calls Liar on Cora’s bid of 2 × Fives");
     expect(alert).not.toContain("Continue");
   });
 
   it("speaks to the player when they are the caller or the bidder", () => {
-    const { unmount } = render(<ChallengeSplash resolution={callOn(cora, you)} onDone={() => {}} />);
+    const { unmount } = render(<ChallengeSplash resolution={callOn(cora, you)} onContinue={() => {}} />);
     expect(screen.getByRole("alert").textContent).toContain("You call Liar on Cora’s bid");
     unmount();
 
-    render(<ChallengeSplash resolution={callOn(you, duke)} onDone={() => {}} />);
+    render(<ChallengeSplash resolution={callOn(you, duke)} onContinue={() => {}} />);
     expect(screen.getByRole("alert").textContent).toContain("Duke calls Liar on your bid");
   });
 
   it("waits for Continue however long it stays up, and focuses it", () => {
-    const onDone = vi.fn();
-    render(<ChallengeSplash resolution={callOn(cora, duke)} onDone={onDone} />, { wrapper: StrictWrapper });
+    const onContinue = vi.fn();
+    render(<ChallengeSplash resolution={callOn(cora, duke)} onContinue={onContinue} />, { wrapper: StrictWrapper });
     const button = screen.getByRole("button", { name: "Continue" });
     expect(document.activeElement).toBe(button);
 
     act(() => vi.advanceTimersByTime(60_000));
-    expect(onDone).not.toHaveBeenCalled();
+    expect(onContinue).not.toHaveBeenCalled();
 
     fireEvent.click(button);
-    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(onContinue).toHaveBeenCalledTimes(1);
   });
 });

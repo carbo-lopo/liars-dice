@@ -29,7 +29,7 @@ export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covere
     placeBid,
     call,
     continueAfterBotAction,
-    finishChallenge,
+    continueAfterChallenge,
     finishRolling,
     finishTyping,
     continueAfterReveal,
@@ -64,7 +64,7 @@ export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covere
       awaitingContinue={awaitingContinue}
       covered={covered}
       challenge={challenge}
-      onChallengeShown={finishChallenge}
+      onContinueChallenge={continueAfterChallenge}
       thinkingBot={thinkingBot}
       rolling={rolling}
       typingBid={typingBid}

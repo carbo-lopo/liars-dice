@@ -9,7 +9,13 @@ import { ContinueButton } from "./ContinueButton.js";
  * and waits for the player to press Continue, which takes focus so Enter
  * works too. Sits over the felt, which the surrounding TableFrame positions.
  */
-export function ChallengeSplash({ resolution, onDone }: { resolution: ChallengeResolution; onDone: () => void }) {
+export function ChallengeSplash({
+  resolution,
+  onContinue,
+}: {
+  resolution: ChallengeResolution;
+  onContinue: () => void;
+}) {
   const continueRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -76,7 +82,7 @@ export function ChallengeSplash({ resolution, onDone }: { resolution: ChallengeR
       </div>
       {/* Where Continue sits on the table underneath, so the eye finds it in the same place. */}
       <div style={{ position: "absolute", right: 26, bottom: 26 }}>
-        <ContinueButton ref={continueRef} onContinue={onDone} />
+        <ContinueButton ref={continueRef} onContinue={onContinue} />
       </div>
     </div>
   );

@@ -80,8 +80,8 @@ export interface UseGameApi {
   placeBid: (bid: Bid) => void;
   call: () => void;
   continueAfterBotAction: () => void;
-  /** Called by the UI once the challenge splash has been shown. */
-  finishChallenge: () => void;
+  /** The player pressed Continue on the challenge splash. */
+  continueAfterChallenge: () => void;
   /** Called by the UI once the start-of-round roll has finished. */
   finishRolling: () => void;
   /** Called by the UI once the latest bid has finished typing out. */
@@ -239,7 +239,7 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
     );
   }, []);
 
-  const finishChallenge = useCallback(() => {
+  const continueAfterChallenge = useCallback(() => {
     setPhase((current) =>
       current.kind === "challenge"
         ? { kind: "reveal", resolution: current.resolution, gameOverAfter: current.gameOverAfter }
@@ -327,7 +327,7 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
     placeBid,
     call,
     continueAfterBotAction,
-    finishChallenge,
+    continueAfterChallenge,
     finishRolling,
     finishTyping,
     continueAfterReveal,

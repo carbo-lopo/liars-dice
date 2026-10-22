@@ -29,7 +29,7 @@ export interface MainScreenProps {
   covered: boolean;
   /** A call to announce with the splash over the table. */
   challenge: ChallengeResolution | null;
-  onChallengeShown: () => void;
+  onContinueChallenge: () => void;
   thinkingBot: string | null;
   rolling: boolean;
   typingBid: boolean;
@@ -51,7 +51,7 @@ export function MainScreen({
   awaitingContinue,
   covered,
   challenge,
-  onChallengeShown,
+  onContinueChallenge,
   thinkingBot,
   rolling,
   typingBid,
@@ -209,7 +209,7 @@ export function MainScreen({
           />
         </div>
       )}
-      {challenge && <ChallengeSplash resolution={challenge} onDone={onChallengeShown} />}
+      {challenge && <ChallengeSplash resolution={challenge} onContinue={onContinueChallenge} />}
     </TableFrame>
   );
 }

@@ -145,7 +145,7 @@ describe("useGame", () => {
     act(() => result.current.continueAfterReveal());
     expect(result.current.phase.kind).toBe("challenge");
 
-    act(() => result.current.finishChallenge());
+    act(() => result.current.continueAfterChallenge());
     expect(result.current.screen).toBe("reveal");
     expect(result.current.resolution?.challenger.name).toBe("You");
 
@@ -163,7 +163,7 @@ describe("useGame", () => {
 
     act(() => vi.advanceTimersByTime(THINKING_MAX_MS));
     expect(result.current.challenge?.challenger.name).toBe("Bo");
-    act(() => result.current.finishChallenge());
+    act(() => result.current.continueAfterChallenge());
     expect(result.current.screen).toBe("reveal");
     expect(result.current.resolution?.challenger.name).toBe("Bo");
   });
@@ -209,7 +209,7 @@ describe("useGame", () => {
           act(() => (game.view.currentBid ? game.call() : game.placeBid({ quantity: 1, face: 2 })));
           break;
         case "challenge":
-          act(() => game.finishChallenge());
+          act(() => game.continueAfterChallenge());
           break;
         case "reveal":
           sawFinalReveal = game.phase.gameOverAfter;
