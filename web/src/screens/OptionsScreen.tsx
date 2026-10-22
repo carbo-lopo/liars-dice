@@ -31,7 +31,8 @@ export function OptionsScreen({ onBack }: { onBack: () => void }) {
           <span style={{ fontSize: 15, color: "var(--text-primary)" }}>Auto-continue after bot bids</span>
         </label>
         <p id={autoContinueHint} style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "var(--text-secondary)" }}>
-        Automatically continue after 10 seconds. You can hover over the continue button to pause the countdown.
+          Automatically continue after {AUTO_CONTINUE_MS / 1000} seconds. You can hover over the continue button to
+          pause the countdown.
         </p>
       </section>
     </TableFrame>

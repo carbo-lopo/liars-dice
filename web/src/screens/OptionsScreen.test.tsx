@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AUTO_CONTINUE_MS } from "../components/ContinueButton";
 import { SETTINGS_STORAGE_KEY, SettingsProvider } from "../settings/settings";
 import { OptionsScreen } from "./OptionsScreen";
 
@@ -27,10 +28,11 @@ describe("OptionsScreen", () => {
     expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY)!)).toEqual({ autoContinue: false });
   });
 
-  it("explains the setting to screen readers", () => {
+  it("links the switch to a description that gives the real countdown length", () => {
     const { toggle } = renderOptions();
     const hint = document.getElementById(toggle().getAttribute("aria-describedby")!);
-    expect(hint?.textContent).toMatch(/presses itself/);
+    expect(hint).not.toBeNull();
+    expect(hint!.textContent).toContain(`${AUTO_CONTINUE_MS / 1000} seconds`);
   });
 
   it("goes back when Back is pressed", () => {
