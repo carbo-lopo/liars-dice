@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useGame } from "./hooks/useGame.js";
 import { MainScreen } from "./screens/MainScreen.js";
 import { RevealScreen } from "./screens/RevealScreen.js";
@@ -21,23 +22,31 @@ export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covere
     thinkingBot,
     rolling,
     typingBid,
+    challenge,
     resolution,
     result,
     error,
     placeBid,
     call,
     continueAfterBotAction,
+    continueAfterChallenge,
     finishRolling,
     finishTyping,
     continueAfterReveal,
     playAgain,
   } = useGame();
+  // Stays as the player left it for later reveals, through Play Again, until
+  // they go back to the main menu (which mounts a new GameApp).
+  const [fastReveal, setFastReveal] = useState(false);
 
   if (screen === "reveal" && resolution) {
     return (
       <RevealScreen
         resolution={resolution}
         onContinue={continueAfterReveal}
+        fastForward={fastReveal}
+        onToggleFastForward={() => setFastReveal((on) => !on)}
+        covered={covered}
         onQuit={onMainMenu}
         onRules={onOpenRules}
         onOptions={onOpenOptions}
@@ -56,6 +65,8 @@ export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covere
       isYourTurn={isYourTurn}
       awaitingContinue={awaitingContinue}
       covered={covered}
+      challenge={challenge}
+      onContinueChallenge={continueAfterChallenge}
       thinkingBot={thinkingBot}
       rolling={rolling}
       typingBid={typingBid}

@@ -21,6 +21,8 @@ export interface DieProps {
   decorative?: boolean;
   /** Still being rolled: the face shown is not the die's value yet. */
   spinning?: boolean;
+  /** Faded, e.g. a revealed die that doesn't count toward the bid. */
+  dimmed?: boolean;
   className?: string;
 }
 
@@ -35,6 +37,7 @@ export function Die({
   countsToward,
   decorative = false,
   spinning = false,
+  dimmed = false,
   className,
 }: DieProps) {
   const highlighted = countsToward !== undefined;
@@ -76,6 +79,7 @@ export function Die({
         height: size,
         borderRadius: radius,
         flexShrink: 0,
+        opacity: dimmed ? 0.5 : undefined,
         background: "linear-gradient(var(--die-face-top), var(--die-face-bottom))",
         border: "1px solid var(--die-shadow)",
         boxShadow: highlighted

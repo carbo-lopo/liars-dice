@@ -27,6 +27,8 @@ export function TableFrame({ children }: { children: ReactNode }) {
           style={{
             width: "100%",
             minHeight: "min(680px, 80vh)",
+            position: "relative",
+            overflow: "hidden",
             borderRadius: 10,
             background: "var(--felt)",
             boxShadow: "inset 0 0 40px rgba(0,0,0,0.35)",

@@ -26,6 +26,11 @@ export type GamePhase =
   | { kind: "typingBid"; byHuman: boolean }
   /** A bot has bid; the player presses Continue to move on. */
   | { kind: "awaitingContinue" }
+  /**
+   * A call was just made and the splash announces it. The engine has already
+   * started the next round, so the table is shown as it stood at the call.
+   */
+  | { kind: "challenge"; resolution: ChallengeResolution; gameOverAfter: boolean; table: TableSnapshot }
   /** A challenge was resolved and the dice are shown. */
   | { kind: "reveal"; resolution: ChallengeResolution; gameOverAfter: boolean }
   | { kind: "gameOver" };
@@ -37,6 +42,12 @@ export interface OpponentSeat {
   strategyLabel: string;
   diceCount: number;
   eliminated: boolean;
+}
+
+/** What the player sees of the table at one moment. */
+export interface TableSnapshot {
+  view: PlayerView;
+  opponents: OpponentSeat[];
 }
 
 export interface GameResult {
@@ -61,12 +72,16 @@ export interface UseGameApi {
   thinkingBot: string | null;
   /** The latest bid was just placed and is still being typed out on screen. */
   typingBid: boolean;
+  /** The call being announced by the challenge splash, if any. */
+  challenge: ChallengeResolution | null;
   resolution: ChallengeResolution | null;
   result: GameResult | null;
   error: string | null;
   placeBid: (bid: Bid) => void;
   call: () => void;
   continueAfterBotAction: () => void;
+  /** The player pressed Continue on the challenge splash. */
+  continueAfterChallenge: () => void;
   /** Called by the UI once the start-of-round roll has finished. */
   finishRolling: () => void;
   /** Called by the UI once the latest bid has finished typing out. */
@@ -104,6 +119,23 @@ function apply(engine: GameEngine, action: PlayerAction): GameEvent[] {
   return action.type === "call" ? engine.call() : engine.bid(action.bid);
 }
 
+function opponentsOf(engine: GameEngine): OpponentSeat[] {
+  return engine.game.players
+    .filter((p) => !p.isHuman)
+    .map((p) => ({
+      name: p.name,
+      strategyId: p.strategy!.id,
+      strategyLabel: p.strategy!.label,
+      diceCount: p.diceCount,
+      eliminated: p.isEliminated(),
+    }));
+}
+
+function snapshotTable(engine: GameEngine): TableSnapshot {
+  const human = engine.game.players.find((p) => p.isHuman)!;
+  return { view: engine.viewFor(human), opponents: opponentsOf(engine) };
+}
+
 /**
  * The phase to enter once the engine is ready for its next turn: waiting on the
  * player, a bot thinking, or game over. Phases belong to this hook and drive
@@ -117,16 +149,18 @@ function nextTurnPhase(engine: GameEngine): GamePhase {
 }
 
 /**
- * The phase after a player, human or bot, bids or calls: a call reveals the
- * dice, and a bid is typed out in the Current Bid card.
+ * The phase after a player, human or bot, bids or calls: a call is announced
+ * over the table as it stood (`before`), and a bid is typed out in the Current
+ * Bid card.
  */
-function phaseAfterAction(events: readonly GameEvent[], byHuman: boolean): GamePhase {
+function phaseAfterAction(events: readonly GameEvent[], byHuman: boolean, before: TableSnapshot): GamePhase {
   const revealed = events.find((e): e is DiceRevealed => e instanceof DiceRevealed);
   if (revealed) {
     return {
-      kind: "reveal",
+      kind: "challenge",
       resolution: revealed.resolution,
       gameOverAfter: events.some((e) => e instanceof GameOver),
+      table: before,
     };
   }
   return { kind: "typingBid", byHuman };
@@ -140,6 +174,7 @@ function screenFor(phase: GamePhase): Screen {
     case "botThinking":
     case "typingBid":
     case "awaitingContinue":
+    case "challenge":
       return "main";
     case "reveal":
       return "reveal";
@@ -168,8 +203,10 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
   const humanAction = useCallback(
     (act: (engine: GameEngine) => GameEvent[]) => {
       setError(null);
+      const engine = engineRef.current!;
+      const before = snapshotTable(engine);
       try {
-        setPhase(phaseAfterAction(act(engineRef.current!), true));
+        setPhase(phaseAfterAction(act(engine), true, before));
         bump();
       } catch (err) {
         if (err instanceof IllegalActionError) setError(err.message);
@@ -202,10 +239,19 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
     );
   }, []);
 
-  const continueAfterReveal = useCallback(() => {
+  const continueAfterChallenge = useCallback(() => {
     setPhase((current) =>
-      current.kind === "reveal" && current.gameOverAfter ? { kind: "gameOver" } : { kind: "rolling" },
+      current.kind === "challenge"
+        ? { kind: "reveal", resolution: current.resolution, gameOverAfter: current.gameOverAfter }
+        : current,
     );
+  }, []);
+
+  const continueAfterReveal = useCallback(() => {
+    setPhase((current) => {
+      if (current.kind !== "reveal") return current;
+      return current.gameOverAfter ? { kind: "gameOver" } : { kind: "rolling" };
+    });
   }, []);
 
   const playAgain = useCallback(() => {
@@ -223,6 +269,7 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
       const engine = engineRef.current!;
       const bot = engine.game.round.currentPlayer;
       const view = engine.viewFor(bot);
+      const before = snapshotTable(engine);
       let events: GameEvent[];
       try {
         events = apply(engine, bot.strategy!.decide(view));
@@ -231,7 +278,7 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
         if (err instanceof IllegalActionError && view.currentBid) events = engine.call();
         else throw err;
       }
-      setPhase(phaseAfterAction(events, false));
+      setPhase(phaseAfterAction(events, false, before));
       bump();
     }, thinkingDelay());
     return () => window.clearTimeout(timer);
@@ -246,15 +293,12 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
     [engine, version],
   );
 
-  const opponents: OpponentSeat[] = game.players
-    .filter((p) => !p.isHuman)
-    .map((p) => ({
-      name: p.name,
-      strategyId: p.strategy!.id,
-      strategyLabel: p.strategy!.label,
-      diceCount: p.diceCount,
-      eliminated: p.isEliminated(),
-    }));
+  const liveOpponents = useMemo(
+    () => opponentsOf(engine),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [engine, version],
+  );
+  const table: TableSnapshot = phase.kind === "challenge" ? phase.table : { view, opponents: liveOpponents };
 
   const winner = game.isOver ? game.winner : null;
   const result: GameResult | null = winner
@@ -267,8 +311,8 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
     : null;
 
   return {
-    view,
-    opponents,
+    view: table.view,
+    opponents: table.opponents,
     phase,
     screen: screenFor(phase),
     isYourTurn: phase.kind === "yourTurn",
@@ -276,12 +320,14 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
     awaitingContinue: phase.kind === "awaitingContinue",
     thinkingBot: phase.kind === "botThinking" ? phase.bot : null,
     typingBid: phase.kind === "typingBid",
+    challenge: phase.kind === "challenge" ? phase.resolution : null,
     resolution: phase.kind === "reveal" ? phase.resolution : null,
     result,
     error,
     placeBid,
     call,
     continueAfterBotAction,
+    continueAfterChallenge,
     finishRolling,
     finishTyping,
     continueAfterReveal,

@@ -126,22 +126,35 @@ describe("useGame", () => {
     expect(result.current.view.bidHistory).toHaveLength(1);
   });
 
-  it("shows the reveal after the player calls, then rolls the next round", () => {
+  it("announces the player's call over the table as it stood, then reveals, then rolls", () => {
     const { result } = renderGame([ann, you]);
     act(() => result.current.finishRolling());
     playBotTurn(result);
+    const handAtCall = result.current.view.hand;
 
     act(() => result.current.call());
+    expect(result.current.phase.kind).toBe("challenge");
+    expect(result.current.screen).toBe("main");
+    expect(result.current.challenge?.challenger.name).toBe("You");
+    expect(result.current.challenge?.bidder.name).toBe("Ann");
+    // The engine has moved on, but the table under the splash is still the called round.
+    expect(result.current.view.roundNumber).toBe(0);
+    expect(result.current.view.bidHistory.map((r) => r.bidder.name)).toEqual(["Ann"]);
+    expect(result.current.view.hand).toEqual(handAtCall);
+
+    act(() => result.current.continueAfterReveal());
+    expect(result.current.phase.kind).toBe("challenge");
+
+    act(() => result.current.continueAfterChallenge());
     expect(result.current.screen).toBe("reveal");
     expect(result.current.resolution?.challenger.name).toBe("You");
-    expect(result.current.resolution?.bidder.name).toBe("Ann");
 
     act(() => result.current.continueAfterReveal());
     expect(result.current.phase.kind).toBe("rolling");
     expect(result.current.view.roundNumber).toBe(1);
   });
 
-  it("goes straight to the reveal when a bot calls the player's bid", () => {
+  it("announces a bot calling the player's bid, then reveals", () => {
     const { result } = renderGame([you, bo]);
     act(() => result.current.finishRolling());
     act(() => result.current.placeBid({ quantity: 1, face: 3 }));
@@ -149,6 +162,8 @@ describe("useGame", () => {
     expect(result.current.thinkingBot).toBe("Bo");
 
     act(() => vi.advanceTimersByTime(THINKING_MAX_MS));
+    expect(result.current.challenge?.challenger.name).toBe("Bo");
+    act(() => result.current.continueAfterChallenge());
     expect(result.current.screen).toBe("reveal");
     expect(result.current.resolution?.challenger.name).toBe("Bo");
   });
@@ -192,6 +207,9 @@ describe("useGame", () => {
           break;
         case "yourTurn":
           act(() => (game.view.currentBid ? game.call() : game.placeBid({ quantity: 1, face: 2 })));
+          break;
+        case "challenge":
+          act(() => game.continueAfterChallenge());
           break;
         case "reveal":
           sawFinalReveal = game.phase.gameOverAfter;

@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { forwardRef, useEffect, useId, useState } from "react";
 import { COUNTDOWN_TICK_MS, useCountdown } from "../hooks/useCountdown.js";
 import { usePageVisible } from "../hooks/usePageVisible.js";
 import { prefersReducedMotion } from "../lib/motion.js";
@@ -10,6 +10,8 @@ export interface ContinueButtonProps {
   onContinue: () => void;
   /** Keep the button's space but hide and disable it. */
   hidden?: boolean;
+  /** Show the button greyed out and unpressable. */
+  disabled?: boolean;
   /** Press itself after this long, shown as a shrinking bar; null to wait for a click. */
   autoContinueMs?: number | null;
   /** Hold the countdown, e.g. while another screen covers the game. */
@@ -21,21 +23,26 @@ export interface ContinueButtonProps {
  * shrinks to nothing and then the button presses itself; hovering or focusing
  * it, a hidden page, or `paused` all hold the countdown where it is.
  */
-export function ContinueButton({ onContinue, hidden = false, autoContinueMs = null, paused = false }: ContinueButtonProps) {
+export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>(function ContinueButton(
+  { onContinue, hidden = false, disabled = false, autoContinueMs = null, paused = false },
+  ref,
+) {
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const pageVisible = usePageVisible();
   const hintId = useId();
 
+  const unavailable = hidden || disabled;
+
   // A disabled button can lose the pointer or focus without mouseleave or blur
   // firing, which would leave the next countdown paused for good.
   useEffect(() => {
-    if (!hidden) return;
+    if (!unavailable) return;
     setHovered(false);
     setFocused(false);
-  }, [hidden]);
+  }, [unavailable]);
 
-  const counting = !hidden && autoContinueMs !== null;
+  const counting = !unavailable && autoContinueMs !== null;
   const held = paused || hovered || focused || !pageVisible;
   const remaining = useCountdown(counting ? autoContinueMs : null, held, onContinue);
   const seconds = Math.round((autoContinueMs ?? 0) / 1000);
@@ -43,15 +50,20 @@ export function ContinueButton({ onContinue, hidden = false, autoContinueMs = nu
   return (
     <>
       <button
+        ref={ref}
         type="button"
         onClick={onContinue}
-        disabled={hidden}
+        disabled={unavailable}
         aria-describedby={counting ? hintId : undefined}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        style={{ ...continueButtonStyle, visibility: hidden ? "hidden" : "visible" }}
+        style={{
+          ...continueButtonStyle,
+          visibility: hidden ? "hidden" : "visible",
+          ...(disabled && { opacity: 0.45, cursor: "not-allowed", filter: "grayscale(0.6)" }),
+        }}
       >
         {counting && (
           <span
@@ -76,7 +88,7 @@ export function ContinueButton({ onContinue, hidden = false, autoContinueMs = nu
       )}
     </>
   );
-}
+});
 
 const continueButtonStyle = {
   position: "relative",
