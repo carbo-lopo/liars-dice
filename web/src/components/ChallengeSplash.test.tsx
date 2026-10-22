@@ -46,6 +46,17 @@ describe("ChallengeSplash", () => {
     expect(screen.getByRole("alert").textContent).toContain("Duke calls Liar on your bid");
   });
 
+  it("focuses Continue once nothing covers it any more", () => {
+    const resolution = callOn(cora, duke);
+    const { rerender } = render(<ChallengeSplash resolution={resolution} onContinue={() => {}} covered />, {
+      wrapper: StrictWrapper,
+    });
+    expect(document.activeElement).toBe(document.body);
+
+    rerender(<ChallengeSplash resolution={resolution} onContinue={() => {}} covered={false} />);
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Continue" }));
+  });
+
   it("waits for Continue however long it stays up, and focuses it", () => {
     const onContinue = vi.fn();
     render(<ChallengeSplash resolution={callOn(cora, duke)} onContinue={onContinue} />, { wrapper: StrictWrapper });

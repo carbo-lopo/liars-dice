@@ -12,15 +12,19 @@ import { ContinueButton } from "./ContinueButton.js";
 export function ChallengeSplash({
   resolution,
   onContinue,
+  covered = false,
 }: {
   resolution: ChallengeResolution;
   onContinue: () => void;
+  /** Another screen (Rules, Options) is covering the game; focus waits until it's gone. */
+  covered?: boolean;
 }) {
   const continueRef = useRef<HTMLButtonElement>(null);
 
+  // A covered screen can't take focus, e.g. when a bot calls while Rules is open.
   useEffect(() => {
-    continueRef.current?.focus();
-  }, []);
+    if (!covered) continueRef.current?.focus();
+  }, [covered]);
 
   const { challenger, bidder, bid } = resolution;
   const caller = `${challenger.name} ${conjugate(challenger.isHuman, "call")}`;

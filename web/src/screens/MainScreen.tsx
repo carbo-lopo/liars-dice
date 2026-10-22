@@ -213,7 +213,7 @@ export function MainScreen({
           </div>
         )}
       </div>
-      {challenge && <ChallengeSplash resolution={challenge} onContinue={onContinueChallenge} />}
+      {challenge && <ChallengeSplash resolution={challenge} onContinue={onContinueChallenge} covered={covered} />}
     </TableFrame>
   );
 }
