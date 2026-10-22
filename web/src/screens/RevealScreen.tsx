@@ -242,7 +242,9 @@ export function RevealScreen({
               color: "#E7D9B8",
             }}
           >
-            Revealing {possessive(current.player.isHuman, current.player.name)} dice…
+            {current.done
+              ? "All dice are up…"
+              : `Revealing ${possessive(current.player.isHuman, current.player.name)} dice…`}
           </span>
         )}
         {!verdictShown && <FastForwardButton on={fastForward} onToggle={onToggleFastForward} />}

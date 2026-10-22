@@ -128,6 +128,19 @@ describe("RevealScreen", () => {
     expect(count()).toBe("2");
   });
 
+  it("says whose dice are being revealed, and when they're all up", () => {
+    renderReveal();
+    expect(screen.getByText("Revealing Cora’s dice…")).toBeTruthy();
+    const yourFirstDie = FIRST_REVEAL_MS + 5 * REVEAL_GAP_MS + NEXT_HAND_MS;
+    act(() => vi.advanceTimersByTime(yourFirstDie));
+    expect(screen.getByText("Revealing your dice…")).toBeTruthy();
+
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS - yourFirstDie));
+    expect(screen.getByText("All dice are up…")).toBeTruthy();
+    act(() => vi.advanceTimersByTime(VERDICT_MS));
+    expect(screen.queryByText("All dice are up…")).toBeNull();
+  });
+
   it("tells screen readers each hand's total as it finishes", () => {
     renderReveal();
     act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS + 4 * REVEAL_GAP_MS));
