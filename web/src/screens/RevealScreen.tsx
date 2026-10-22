@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import type { Face } from "@engine/types/face.js";
 import { ContinueButton } from "../components/ContinueButton.js";
@@ -44,6 +45,14 @@ export function RevealScreen({
     true,
     fastForward ? FAST_FORWARD_SPEED : 1,
   );
+
+  // Keyboard focus sits on fast forward while the dice turn over, then moves to
+  // Continue once it can be pressed, so Space and Enter work without hunting.
+  const fastForwardRef = useRef<HTMLButtonElement>(null);
+  const continueRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    (verdictShown ? continueRef : fastForwardRef).current?.focus();
+  }, [verdictShown]);
 
   let start = 0;
   const rows = hands.map(({ player, dice }) => {
@@ -247,8 +256,8 @@ export function RevealScreen({
               : `Revealing ${possessive(current.player.isHuman, current.player.name)} dice…`}
           </span>
         )}
-        {!verdictShown && <FastForwardButton on={fastForward} onToggle={onToggleFastForward} />}
-        <ContinueButton onContinue={onContinue} disabled={!verdictShown} />
+        {!verdictShown && <FastForwardButton ref={fastForwardRef} on={fastForward} onToggle={onToggleFastForward} />}
+        <ContinueButton ref={continueRef} onContinue={onContinue} disabled={!verdictShown} />
       </div>
     </TableFrame>
   );

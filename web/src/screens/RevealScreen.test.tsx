@@ -10,6 +10,7 @@ import {
   REVEAL_GAP_MS,
   VERDICT_MS,
 } from "../hooks/useRevealSequence";
+import { preferReducedMotion } from "../test/motion";
 import { StrictWrapper } from "../test/strictMode";
 import { RevealScreen } from "./RevealScreen";
 
@@ -89,6 +90,21 @@ describe("RevealScreen", () => {
 
     act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS));
     expect(fastForwardButton()).toBeNull();
+  });
+
+  it("keeps focus on fast forward during the reveal, then moves it to Continue", () => {
+    renderReveal();
+    expect(document.activeElement).toBe(fastForwardButton());
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS));
+    expect(fastForwardButton()).toBeNull();
+    expect(document.activeElement).toBe(continueButton());
+  });
+
+  it("focuses Continue at once for users who prefer reduced motion", () => {
+    preferReducedMotion();
+    renderReveal();
+    expect(fastForwardButton()).toBeNull();
+    expect(document.activeElement).toBe(continueButton());
   });
 
   it("runs twice as fast with fast forward on", () => {
