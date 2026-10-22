@@ -51,10 +51,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function renderReveal({ fastForward = false } = {}) {
+function renderReveal({ fastForward = false, covered = false } = {}) {
   const onContinue = vi.fn();
   const onToggleFastForward = vi.fn();
-  const element = (on: boolean) => (
+  const element = (on: boolean, isCovered = covered) => (
     <RevealScreen
       resolution={coraCalledByDuke()}
       onContinue={onContinue}
@@ -63,10 +63,16 @@ function renderReveal({ fastForward = false } = {}) {
       onOptions={() => {}}
       fastForward={on}
       onToggleFastForward={onToggleFastForward}
+      covered={isCovered}
     />
   );
   const view = render(element(fastForward), { wrapper: StrictWrapper });
-  return { onContinue, onToggleFastForward, setFastForward: (on: boolean) => view.rerender(element(on)) };
+  return {
+    onContinue,
+    onToggleFastForward,
+    setFastForward: (on: boolean) => view.rerender(element(on)),
+    setCovered: (on: boolean) => view.rerender(element(fastForward, on)),
+  };
 }
 
 const fastForwardButton = () => screen.queryByRole("button", { name: "Fast forward" });
@@ -105,6 +111,23 @@ describe("RevealScreen", () => {
     renderReveal();
     expect(fastForwardButton()).toBeNull();
     expect(document.activeElement).toBe(continueButton());
+  });
+
+  it("holds the reveal while another screen covers it, and gives focus back after", () => {
+    const { setCovered } = renderReveal();
+    act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS));
+    expect(count()).toBe("1");
+
+    setCovered(true);
+    act(() => (document.activeElement as HTMLElement).blur());
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(count()).toBe("1");
+    expect(fastForwardButton()).not.toBeNull();
+
+    setCovered(false);
+    expect(document.activeElement).toBe(fastForwardButton());
+    act(() => vi.advanceTimersByTime(REVEAL_GAP_MS));
+    expect(labels()[1]).toBe("Two");
   });
 
   it("runs twice as fast with fast forward on", () => {

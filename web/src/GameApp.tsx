@@ -45,6 +45,7 @@ export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covere
         onContinue={continueAfterReveal}
         fastForward={fastReveal}
         onToggleFastForward={() => setFastReveal((on) => !on)}
+        covered={covered}
         onQuit={onMainMenu}
         onRules={onOpenRules}
         onOptions={onOpenOptions}

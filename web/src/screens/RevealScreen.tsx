@@ -19,6 +19,8 @@ export interface RevealScreenProps {
   /** The reveal runs FAST_FORWARD_SPEED times faster. */
   fastForward: boolean;
   onToggleFastForward: () => void;
+  /** Another screen (Rules, Options) is covering the game; the reveal holds until it's gone. */
+  covered: boolean;
 }
 
 export function RevealScreen({
@@ -29,6 +31,7 @@ export function RevealScreen({
   onOptions,
   fastForward,
   onToggleFastForward,
+  covered,
 }: RevealScreenProps) {
   const { challenger, bidder, loser, bid } = resolution;
   // The resolution records whether its own round was Palifico. By the time this
@@ -44,15 +47,18 @@ export function RevealScreen({
     hands.map((hand) => hand.dice.length),
     true,
     fastForward ? FAST_FORWARD_SPEED : 1,
+    covered,
   );
 
   // Keyboard focus sits on fast forward while the dice turn over, then moves to
   // Continue once it can be pressed, so Space and Enter work without hunting.
+  // A covered screen can't take focus, so it's given again when uncovered.
   const fastForwardRef = useRef<HTMLButtonElement>(null);
   const continueRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
+    if (covered) return;
     (verdictShown ? continueRef : fastForwardRef).current?.focus();
-  }, [verdictShown]);
+  }, [verdictShown, covered]);
 
   let start = 0;
   const rows = hands.map(({ player, dice }) => {

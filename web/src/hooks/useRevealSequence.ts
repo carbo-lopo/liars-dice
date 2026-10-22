@@ -23,41 +23,48 @@ export const FAST_FORWARD_SPEED = 2;
 /**
  * Turns dice face up one at a time while `active`, hand after hand in the
  * order given by `handSizes`, then shows the verdict. Every pause is divided
- * by `speed`; changing it reschedules what's left from the current die. When
- * inactive, or for users who prefer reduced motion, everything is shown at
- * once.
+ * by `speed`; changing it reschedules what's left from the current die.
+ * While `paused`, nothing moves, and the part of a pause already waited is
+ * kept for when it resumes. When inactive, or for users who prefer reduced
+ * motion, everything is shown at once.
  */
-export function useRevealSequence(handSizes: readonly number[], active: boolean, speed = 1): RevealSequence {
+export function useRevealSequence(
+  handSizes: readonly number[],
+  active: boolean,
+  speed = 1,
+  paused = false,
+): RevealSequence {
   const total = handSizes.reduce((sum, n) => sum + n, 0);
   const sizesKey = handSizes.join(",");
   const animate = active && !prefersReducedMotion();
+  const runSpeed = paused ? 0 : speed;
   const initial = (): RevealSequence =>
     animate ? { revealed: 0, verdictShown: false } : { revealed: total, verdictShown: true };
   const [state, setState] = useState<RevealSequence>(initial);
-  // Where the sequence has got to, when the current pause began (`since`) and
-  // the speed it has run at since then, so that a speed change keeps the part
-  // of the pause already waited instead of starting it again.
-  const progressRef = useRef({ state, since: Date.now(), speed });
+  // Where the sequence has got to, and how far into the pause before its next
+  // step: `waited` full-speed milliseconds up to `since`, plus the time since
+  // then at `speed` (0 while paused). A speed change or a pause then carries
+  // on from the same point instead of starting the pause again.
+  const progressRef = useRef({ state, waited: 0, since: Date.now(), speed: runSpeed });
 
   const show = (next: RevealSequence) => {
-    progressRef.current = { state: next, since: Date.now(), speed: progressRef.current.speed };
+    progressRef.current = { state: next, waited: 0, since: Date.now(), speed: progressRef.current.speed };
     setState(next);
   };
 
   // Reset before paint so dice never flash face up before the sequence starts.
   useLayoutEffect(() => {
-    progressRef.current = { state: initial(), since: Date.now(), speed };
+    progressRef.current = { state: initial(), waited: 0, since: Date.now(), speed: runSpeed };
     setState(progressRef.current.state);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animate, sizesKey, total]);
 
   useEffect(() => {
     const progress = progressRef.current;
-    if (!animate || progress.state.verdictShown) return;
-    // Time already waited toward the next step counts at the speed it was waited at.
     const now = Date.now();
-    let waited = (now - progress.since) * progress.speed;
-    progressRef.current = { ...progress, since: now, speed };
+    let waited = progress.waited + (now - progress.since) * progress.speed;
+    progressRef.current = { ...progress, waited, since: now, speed: runSpeed };
+    if (!animate || paused || progress.state.verdictShown) return;
 
     const handStarts = new Set(handSizes.map((_, hand) => handSizes.slice(0, hand).reduce((a, n) => a + n, 0)));
     const pauseFor = (step: number) =>
@@ -79,7 +86,7 @@ export function useRevealSequence(handSizes: readonly number[], active: boolean,
     return () => timers.forEach((t) => window.clearTimeout(t));
     // handSizes is read through sizesKey so a new array with the same sizes doesn't restart the sequence.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animate, sizesKey, total, speed]);
+  }, [animate, sizesKey, total, runSpeed]);
 
   return state;
 }
