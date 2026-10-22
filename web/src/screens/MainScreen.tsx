@@ -7,7 +7,9 @@ import { CurrentBidCard, BidHistoryCard } from "../components/BidCards.js";
 import { HandRow } from "../components/HandRow.js";
 import { ActionBar } from "../components/ActionBar.js";
 import { PalificoIcon } from "../components/PalificoIcon.js";
+import { AUTO_CONTINUE_MS, ContinueButton } from "../components/ContinueButton.js";
 import { HeaderButton } from "../components/HeaderButton.js";
+import { useSettings } from "../settings/settings.js";
 import { useState } from "react";
 
 const PERSONALITY_ACCENT: Record<string, string> = {
@@ -21,6 +23,8 @@ export interface MainScreenProps {
   opponents: OpponentSeat[];
   isYourTurn: boolean;
   awaitingContinue: boolean;
+  /** Another screen (Rules, Options) is covering the game. */
+  covered: boolean;
   thinkingBot: string | null;
   rolling: boolean;
   typingBid: boolean;
@@ -39,6 +43,7 @@ export function MainScreen({
   opponents,
   isYourTurn,
   awaitingContinue,
+  covered,
   thinkingBot,
   rolling,
   typingBid,
@@ -51,6 +56,7 @@ export function MainScreen({
   onQuit,
   onRules,
 }: MainScreenProps) {
+  const { settings } = useSettings();
   const [selectedFace, setSelectedFace] = useState<Face | null>(view.currentBid?.face ?? null);
 
   const bidderName = view.bidHistory.at(-1)?.bidder.name ?? null;
@@ -185,28 +191,14 @@ export function MainScreen({
       ) : (
         // Rendered even while a bot moves, with the button hidden, so the board doesn't shift when Continue appears.
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
-          <button
-            type="button"
-            onClick={onContinueBotAction}
-            disabled={!awaitingContinue}
-            style={{ ...continueButtonStyle, visibility: awaitingContinue ? "visible" : "hidden" }}
-          >
-            Continue
-          </button>
+          <ContinueButton
+            onContinue={onContinueBotAction}
+            hidden={!awaitingContinue}
+            autoContinueMs={settings.autoContinue ? AUTO_CONTINUE_MS : null}
+            paused={covered}
+          />
         </div>
       )}
     </TableFrame>
   );
 }
-
-const continueButtonStyle = {
-  background: "linear-gradient(var(--gold-strong), var(--gold-deep))",
-  color: "var(--ink)",
-  border: "1px solid var(--gold-border)",
-  borderRadius: 8,
-  padding: "12px 24px",
-  fontFamily: "var(--font-display)",
-  fontWeight: 700,
-  fontSize: 15,
-  cursor: "pointer",
-} as const;

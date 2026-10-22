@@ -32,7 +32,12 @@ export default function App() {
         // in-progress game and its engine state survive a trip to the Rules
         // screen and back -- unmounting here would reset the whole game.
         <div style={{ display: rulesOpen ? "none" : undefined }}>
-          <GameApp key={gameInstance} onMainMenu={returnToMenu} onOpenRules={() => openRules(true)} />
+          <GameApp
+            key={gameInstance}
+            onMainMenu={returnToMenu}
+            onOpenRules={() => openRules(true)}
+            covered={rulesOpen}
+          />
         </div>
       )}
 

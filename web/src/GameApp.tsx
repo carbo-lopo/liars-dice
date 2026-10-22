@@ -6,9 +6,11 @@ import { GameOverScreen } from "./screens/GameOverScreen.js";
 export interface GameAppProps {
   onMainMenu: () => void;
   onOpenRules: () => void;
+  /** Another screen (Rules, Options) is covering the game. */
+  covered: boolean;
 }
 
-export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
+export default function GameApp({ onMainMenu, onOpenRules, covered }: GameAppProps) {
   const {
     view,
     opponents,
@@ -51,6 +53,7 @@ export default function GameApp({ onMainMenu, onOpenRules }: GameAppProps) {
       opponents={opponents}
       isYourTurn={isYourTurn}
       awaitingContinue={awaitingContinue}
+      covered={covered}
       thinkingBot={thinkingBot}
       rolling={rolling}
       typingBid={typingBid}
