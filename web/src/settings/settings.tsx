@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 /** Player preferences that last between visits. */
 export interface Settings {
@@ -42,10 +42,16 @@ const SettingsContext = createContext<SettingsApi | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState(loadSettings);
+  // Only a player's own choices are saved, so a setting they never touched
+  // keeps following the default if the default changes later.
+  const changedRef = useRef(false);
 
-  useEffect(() => saveSettings(settings), [settings]);
+  useEffect(() => {
+    if (changedRef.current) saveSettings(settings);
+  }, [settings]);
 
   const updateSettings = useCallback((changes: Partial<Settings>) => {
+    changedRef.current = true;
     setSettings((current) => ({ ...current, ...changes }));
   }, []);
 

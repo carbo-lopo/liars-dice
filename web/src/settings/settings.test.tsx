@@ -18,6 +18,11 @@ describe("settings", () => {
     expect(result.current.settings.autoContinue).toBe(true);
   });
 
+  it("saves nothing until the player changes a setting", () => {
+    renderHook(() => useSettings(), { wrapper });
+    expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
+  });
+
   it("saves a change so the next visit starts with it", () => {
     const first = renderHook(() => useSettings(), { wrapper });
     act(() => first.result.current.updateSettings({ autoContinue: false }));
