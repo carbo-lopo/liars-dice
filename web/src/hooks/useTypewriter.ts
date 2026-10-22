@@ -1,8 +1,8 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { prefersReducedMotion } from "../lib/motion.js";
 import { useLatestRef } from "./useLatestRef.js";
 
-const MS_PER_CHARACTER = 120;
+export const MS_PER_CHARACTER = 120;
 
 /**
  * Reveals `text` one character at a time while `active` is true, then calls
@@ -12,6 +12,9 @@ const MS_PER_CHARACTER = 120;
 export function useTypewriter(text: string, active: boolean, onDone: () => void): string {
   const [shown, setShown] = useState(active ? 0 : text.length);
   const onDoneRef = useLatestRef(onDone);
+  // The text whose typing has already finished. StrictMode re-runs effects on
+  // mount; this keeps onDone to one call per text.
+  const finishedTextRef = useRef<string | null>(null);
 
   // Reset before paint so the finished text never flashes before typing starts.
   useLayoutEffect(() => {
@@ -19,9 +22,17 @@ export function useTypewriter(text: string, active: boolean, onDone: () => void)
   }, [text, active]);
 
   useEffect(() => {
-    if (!active) return;
-    if (prefersReducedMotion()) {
+    if (!active) {
+      finishedTextRef.current = null;
+      return;
+    }
+    const finish = () => {
+      if (finishedTextRef.current === text) return;
+      finishedTextRef.current = text;
       onDoneRef.current();
+    };
+    if (prefersReducedMotion()) {
+      finish();
       return;
     }
     let count = 0;
@@ -30,7 +41,7 @@ export function useTypewriter(text: string, active: boolean, onDone: () => void)
       setShown(count);
       if (count >= text.length) {
         window.clearInterval(timer);
-        onDoneRef.current();
+        finish();
       }
     }, MS_PER_CHARACTER);
     return () => window.clearInterval(timer);
