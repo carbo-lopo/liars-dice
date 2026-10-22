@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { callsAnyBid, raisesByOne } from "../test/scriptedBot";
 import { StrictWrapper } from "../test/strictMode";
 import { DEFAULT_SEATS, THINKING_MAX_MS, useGame, type UseGameApi } from "./useGame";
+import { silenceExpectedRenderErrors } from "../test/expectedErrors";
 
 const you: Seat = { name: "You", strategy: null };
 const ann: Seat = { name: "Ann", strategy: raisesByOne };
@@ -149,6 +150,7 @@ describe("useGame", () => {
   });
 
   it("refuses a table without exactly one human seat", () => {
+    silenceExpectedRenderErrors();
     expect(() => renderHook(() => useGame([ann, bo]))).toThrow(/exactly one human/);
     expect(() => renderHook(() => useGame([you, { name: "Also you", strategy: null }]))).toThrow(/exactly one human/);
   });

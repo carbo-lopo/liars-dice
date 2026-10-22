@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, SettingsProvider, useSettings } from "./settings";
+import { silenceExpectedRenderErrors } from "../test/expectedErrors";
 
 const wrapper = ({ children }: { children: ReactNode }) => <SettingsProvider>{children}</SettingsProvider>;
 const saved = () => JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "null");
@@ -51,6 +52,7 @@ describe("settings", () => {
   });
 
   it("refuses to be used outside a SettingsProvider", () => {
+    silenceExpectedRenderErrors();
     expect(() => renderHook(() => useSettings())).toThrow(/SettingsProvider/);
   });
 });
