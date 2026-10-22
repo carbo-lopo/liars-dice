@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { forwardRef, useEffect, useId, useState } from "react";
 import { COUNTDOWN_TICK_MS, useCountdown } from "../hooks/useCountdown.js";
 import { usePageVisible } from "../hooks/usePageVisible.js";
 import { prefersReducedMotion } from "../lib/motion.js";
@@ -21,7 +21,10 @@ export interface ContinueButtonProps {
  * shrinks to nothing and then the button presses itself; hovering or focusing
  * it, a hidden page, or `paused` all hold the countdown where it is.
  */
-export function ContinueButton({ onContinue, hidden = false, autoContinueMs = null, paused = false }: ContinueButtonProps) {
+export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>(function ContinueButton(
+  { onContinue, hidden = false, autoContinueMs = null, paused = false },
+  ref,
+) {
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const pageVisible = usePageVisible();
@@ -43,6 +46,7 @@ export function ContinueButton({ onContinue, hidden = false, autoContinueMs = nu
   return (
     <>
       <button
+        ref={ref}
         type="button"
         onClick={onContinue}
         disabled={hidden}
@@ -76,7 +80,7 @@ export function ContinueButton({ onContinue, hidden = false, autoContinueMs = nu
       )}
     </>
   );
-}
+});
 
 const continueButtonStyle = {
   position: "relative",
