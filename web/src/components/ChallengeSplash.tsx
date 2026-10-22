@@ -37,7 +37,6 @@ export function ChallengeSplash({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 72,
         zIndex: 10,
       }}
     >
