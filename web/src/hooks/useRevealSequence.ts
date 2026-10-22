@@ -2,13 +2,13 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { prefersReducedMotion } from "../lib/motion.js";
 
 /** Pause before the first die is turned over. */
-export const FIRST_REVEAL_MS = 600;
+export const FIRST_REVEAL_MS = 1200;
 /** Gap between one die being turned over and the next. */
-export const REVEAL_GAP_MS = 400;
+export const REVEAL_GAP_MS = 800;
 /** Extra pause when the reveal moves on to the next player's hand. */
-export const NEXT_HAND_MS = 300;
+export const NEXT_HAND_MS = 600;
 /** Pause after the last die before the verdict appears. */
-export const VERDICT_MS = 700;
+export const VERDICT_MS = 1000;
 
 export interface RevealSequence {
   /** How many dice are face up, counting across the hands in order. */
