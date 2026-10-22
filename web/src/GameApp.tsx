@@ -6,11 +6,12 @@ import { GameOverScreen } from "./screens/GameOverScreen.js";
 export interface GameAppProps {
   onMainMenu: () => void;
   onOpenRules: () => void;
+  onOpenOptions: () => void;
   /** Another screen (Rules, Options) is covering the game. */
   covered: boolean;
 }
 
-export default function GameApp({ onMainMenu, onOpenRules, covered }: GameAppProps) {
+export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covered }: GameAppProps) {
   const {
     view,
     opponents,
@@ -39,6 +40,7 @@ export default function GameApp({ onMainMenu, onOpenRules, covered }: GameAppPro
         onContinue={continueAfterReveal}
         onQuit={onMainMenu}
         onRules={onOpenRules}
+        onOptions={onOpenOptions}
       />
     );
   }
@@ -65,6 +67,7 @@ export default function GameApp({ onMainMenu, onOpenRules, covered }: GameAppPro
       onRolled={finishRolling}
       onQuit={onMainMenu}
       onRules={onOpenRules}
+      onOptions={onOpenOptions}
     />
   );
 }

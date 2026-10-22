@@ -1,24 +1,22 @@
 import { useState } from "react";
 import { StartScreen } from "./screens/StartScreen.js";
 import { RulesScreen } from "./screens/RulesScreen.js";
+import { OptionsScreen } from "./screens/OptionsScreen.js";
 import GameApp from "./GameApp.js";
 
 type AppScreen = "start" | "game";
 
+/** A screen shown over the start screen or the game; `fromGame` records which is underneath. */
+type Overlay = { screen: "rules" | "options"; fromGame: boolean } | null;
+
 export default function App() {
   const [appScreen, setAppScreen] = useState<AppScreen>("start");
-  const [rulesOpen, setRulesOpen] = useState(false);
-  // Whether Rules was opened mid-game. From the start menu it offers
-  // "Start Playing"; mid-game its Back button returns to the game underneath.
-  const [rulesOpenedFromGame, setRulesOpenedFromGame] = useState(false);
+  const [overlay, setOverlay] = useState<Overlay>(null);
   // Bumped whenever a game is abandoned (Quit Game / Main Menu) so the next
   // "Play" mounts a fresh GameApp/engine instead of resuming the old one.
   const [gameInstance, setGameInstance] = useState(0);
 
-  const openRules = (fromGame: boolean) => {
-    setRulesOpenedFromGame(fromGame);
-    setRulesOpen(true);
-  };
+  const closeOverlay = () => setOverlay(null);
 
   const returnToMenu = () => {
     setAppScreen("start");
@@ -28,36 +26,45 @@ export default function App() {
   return (
     <>
       {appScreen === "game" && (
-        // Kept mounted (just visually hidden) while Rules is open, so the
-        // in-progress game and its engine state survive a trip to the Rules
-        // screen and back -- unmounting here would reset the whole game.
-        <div style={{ display: rulesOpen ? "none" : undefined }}>
+        // Kept mounted (just visually hidden) while an overlay is open, so the
+        // in-progress game and its engine state survive the trip there and back;
+        // unmounting here would reset the whole game.
+        <div style={{ display: overlay ? "none" : undefined }}>
           <GameApp
             key={gameInstance}
             onMainMenu={returnToMenu}
-            onOpenRules={() => openRules(true)}
-            covered={rulesOpen}
+            onOpenRules={() => setOverlay({ screen: "rules", fromGame: true })}
+            onOpenOptions={() => setOverlay({ screen: "options", fromGame: true })}
+            covered={overlay !== null}
           />
         </div>
       )}
 
-      {appScreen === "start" && !rulesOpen && (
-        <StartScreen onPlay={() => setAppScreen("game")} onRules={() => openRules(false)} />
+      {appScreen === "start" && !overlay && (
+        <StartScreen
+          onPlay={() => setAppScreen("game")}
+          onRules={() => setOverlay({ screen: "rules", fromGame: false })}
+          onOptions={() => setOverlay({ screen: "options", fromGame: false })}
+        />
       )}
 
-      {rulesOpen && (
+      {overlay?.screen === "rules" && (
         <RulesScreen
-          onBack={() => setRulesOpen(false)}
+          onBack={closeOverlay}
+          // From the start menu, Rules also offers "Start Playing"; mid-game,
+          // Back returns to the game underneath.
           onPlay={
-            rulesOpenedFromGame
+            overlay.fromGame
               ? undefined
               : () => {
-                  setRulesOpen(false);
+                  closeOverlay();
                   setAppScreen("game");
                 }
           }
         />
       )}
+
+      {overlay?.screen === "options" && <OptionsScreen onBack={closeOverlay} />}
     </>
   );
 }

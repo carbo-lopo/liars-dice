@@ -12,6 +12,7 @@ export interface RevealScreenProps {
   onContinue: () => void;
   onQuit: () => void;
   onRules: () => void;
+  onOptions: () => void;
 }
 
 /** "your" for the human, "Cora's" for a bot. */
@@ -19,7 +20,7 @@ function possessive(player: Player): string {
   return player.isHuman ? "your" : `${player.name}’s`;
 }
 
-export function RevealScreen({ resolution, onContinue, onQuit, onRules }: RevealScreenProps) {
+export function RevealScreen({ resolution, onContinue, onQuit, onRules, onOptions }: RevealScreenProps) {
   const { challenger, bidder, loser, bid } = resolution;
   // The resolution records whether its own round was Palifico. By the time this
   // screen shows, the engine has already started the next round.
@@ -33,6 +34,7 @@ export function RevealScreen({ resolution, onContinue, onQuit, onRules }: Reveal
     <TableFrame>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
         <HeaderButton onClick={onRules}>Rules</HeaderButton>
+        <HeaderButton onClick={onOptions}>Options</HeaderButton>
         <HeaderButton onClick={onQuit}>Quit Game</HeaderButton>
       </div>
 

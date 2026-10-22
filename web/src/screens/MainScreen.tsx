@@ -36,6 +36,7 @@ export interface MainScreenProps {
   onRolled: () => void;
   onQuit: () => void;
   onRules: () => void;
+  onOptions: () => void;
 }
 
 export function MainScreen({
@@ -55,6 +56,7 @@ export function MainScreen({
   onRolled,
   onQuit,
   onRules,
+  onOptions,
 }: MainScreenProps) {
   const { settings } = useSettings();
   const [selectedFace, setSelectedFace] = useState<Face | null>(view.currentBid?.face ?? null);
@@ -86,6 +88,7 @@ export function MainScreen({
             Round {view.roundNumber + 1}
           </span>
           <HeaderButton onClick={onRules}>Rules</HeaderButton>
+          <HeaderButton onClick={onOptions}>Options</HeaderButton>
           <HeaderButton onClick={onQuit}>Quit Game</HeaderButton>
         </div>
       </div>
