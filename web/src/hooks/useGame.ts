@@ -183,7 +183,8 @@ export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
   const call = useCallback(() => humanAction((engine) => engine.call()), [humanAction]);
 
   const continueAfterBotAction = useCallback(() => {
-    setPhase(nextTurnPhase(engineRef.current!));
+    // Ignored outside awaitingContinue, e.g. a click landing just after auto-continue pressed it.
+    setPhase((current) => (current.kind === "awaitingContinue" ? nextTurnPhase(engineRef.current!) : current));
   }, []);
 
   const finishRolling = useCallback(() => {

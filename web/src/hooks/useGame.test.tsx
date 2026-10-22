@@ -87,6 +87,21 @@ describe("useGame", () => {
     expect(result.current.opponents.map((o) => o.name)).toEqual(["Ann", "Cy", "Bo"]);
   });
 
+  it("ignores Continue once the game has already moved on", () => {
+    const { result } = renderGame([ann, cy, you]);
+    act(() => result.current.finishRolling());
+    act(() => vi.advanceTimersByTime(THINKING_MAX_MS));
+    act(() => result.current.finishTyping());
+    act(() => result.current.continueAfterBotAction());
+    expect(result.current.thinkingBot).toBe("Cy");
+
+    // A second press, e.g. a click just after auto-continue, must not restart Cy's thinking.
+    act(() => vi.advanceTimersByTime(THINKING_MAX_MS / 2));
+    act(() => result.current.continueAfterBotAction());
+    act(() => vi.advanceTimersByTime(THINKING_MAX_MS / 2));
+    expect(result.current.view.bidHistory.map((r) => r.bidder.name)).toEqual(["Ann", "Cy"]);
+  });
+
   it("types out the player's bid, then the next bot thinks without a Continue", () => {
     const { result } = renderGame([ann, you, cy]);
     act(() => result.current.finishRolling());
