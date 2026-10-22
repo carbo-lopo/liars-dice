@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BOT_STRATEGIES } from "@engine/bots/roster.js";
-import { GameEngine } from "@engine/engine/gameEngine.js";
+import { GameEngine, type Seat } from "@engine/engine/gameEngine.js";
 import { DiceRevealed, GameOver, type GameEvent } from "@engine/events/gameEvent.js";
 import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import { IllegalActionError } from "@engine/rules/illegalActionError.js";
 import type { Bid } from "@engine/types/bid.js";
 import type { PlayerAction } from "@engine/types/playerAction.js";
 import type { PlayerView } from "@engine/types/playerView.js";
+import { useLatestRef } from "./useLatestRef.js";
 
 export type Screen = "main" | "reveal" | "gameover";
 
@@ -75,20 +76,28 @@ export interface UseGameApi {
 }
 
 /** How long a bot appears to think before moving, in milliseconds. */
-const THINKING_MIN_MS = 1000;
-const THINKING_MAX_MS = 1700;
+export const THINKING_MIN_MS = 1000;
+export const THINKING_MAX_MS = 1700;
 
 function thinkingDelay(): number {
   return THINKING_MIN_MS + Math.random() * (THINKING_MAX_MS - THINKING_MIN_MS);
 }
 
-function createEngine(): GameEngine {
-  const [cautious, aggressive] = BOT_STRATEGIES;
-  return GameEngine.start([
-    { name: "Cora", strategy: cautious! },
-    { name: "You", strategy: null },
-    { name: "Duke", strategy: aggressive! },
-  ]);
+const [cautious, aggressive] = BOT_STRATEGIES;
+
+/** The table the web app seats when it isn't given another: two bots with the player between them. */
+export const DEFAULT_SEATS: readonly Seat[] = [
+  { name: "Cora", strategy: cautious! },
+  { name: "You", strategy: null },
+  { name: "Duke", strategy: aggressive! },
+];
+
+function createEngine(seats: readonly Seat[]): GameEngine {
+  const humans = seats.filter((seat) => seat.strategy === null).length;
+  if (humans !== 1) {
+    throw new Error(`The web game needs exactly one human seat (strategy null); got ${humans}.`);
+  }
+  return GameEngine.start(seats);
 }
 
 function apply(engine: GameEngine, action: PlayerAction): GameEvent[] {
@@ -139,9 +148,14 @@ function screenFor(phase: GamePhase): Screen {
   }
 }
 
-export function useGame(): UseGameApi {
+/**
+ * Runs one game at the given table. Seats act in the order given, the first
+ * seat opening round one; exactly one seat must be the human player.
+ */
+export function useGame(seats: readonly Seat[] = DEFAULT_SEATS): UseGameApi {
+  const seatsRef = useLatestRef(seats);
   const engineRef = useRef<GameEngine | null>(null);
-  if (engineRef.current === null) engineRef.current = createEngine();
+  if (engineRef.current === null) engineRef.current = createEngine(seats);
   const engine = engineRef.current;
 
   const [phase, setPhase] = useState<GamePhase>({ kind: "rolling" });
@@ -194,7 +208,7 @@ export function useGame(): UseGameApi {
   }, []);
 
   const playAgain = useCallback(() => {
-    engineRef.current = createEngine();
+    engineRef.current = createEngine(seatsRef.current);
     setError(null);
     setPhase({ kind: "rolling" });
     bump();

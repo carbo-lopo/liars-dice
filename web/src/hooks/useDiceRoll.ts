@@ -1,16 +1,16 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Face } from "@engine/types/face.js";
 import { prefersReducedMotion } from "../lib/motion.js";
 import { useLatestRef } from "./useLatestRef.js";
 
 /** How often a still-spinning die shows a new random face. */
-const SPIN_FRAME_MS = 200;
+export const SPIN_FRAME_MS = 200;
 /** When the first (leftmost) die lands, counted from the start of the roll. */
-const FIRST_LANDING_MS = 1000;
+export const FIRST_LANDING_MS = 1000;
 /** Gap between one die landing and the next. */
-const LANDING_GAP_MS = 400;
+export const LANDING_GAP_MS = 400;
 /** Pause after the last die lands before the roll counts as finished. */
-const SETTLE_MS = 500;
+export const SETTLE_MS = 500;
 
 function randomFaces(count: number): Face[] {
   return Array.from({ length: count }, () => (Math.floor(Math.random() * 6) + 1) as Face);
@@ -33,6 +33,9 @@ export function useDiceRoll(count: number, active: boolean, onDone: () => void):
   const [landed, setLanded] = useState(active ? 0 : count);
   const [spinFaces, setSpinFaces] = useState<Face[]>(() => randomFaces(count));
   const onDoneRef = useLatestRef(onDone);
+  // Whether this roll has already finished. StrictMode re-runs effects on
+  // mount; this keeps onDone to one call per roll.
+  const finishedRef = useRef(false);
 
   // Reset before paint so the real faces never flash before the roll starts.
   useLayoutEffect(() => {
@@ -40,9 +43,17 @@ export function useDiceRoll(count: number, active: boolean, onDone: () => void):
   }, [active, count]);
 
   useEffect(() => {
-    if (!active) return;
-    if (count === 0 || prefersReducedMotion()) {
+    if (!active) {
+      finishedRef.current = false;
+      return;
+    }
+    const finish = () => {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
       onDoneRef.current();
+    };
+    if (count === 0 || prefersReducedMotion()) {
+      finish();
       return;
     }
     const spin = window.setInterval(() => setSpinFaces(randomFaces(count)), SPIN_FRAME_MS);
@@ -51,7 +62,7 @@ export function useDiceRoll(count: number, active: boolean, onDone: () => void):
     );
     const lastLanding = FIRST_LANDING_MS + (count - 1) * LANDING_GAP_MS;
     timers.push(window.setTimeout(() => window.clearInterval(spin), lastLanding));
-    timers.push(window.setTimeout(() => onDoneRef.current(), lastLanding + SETTLE_MS));
+    timers.push(window.setTimeout(finish, lastLanding + SETTLE_MS));
     return () => {
       window.clearInterval(spin);
       timers.forEach((t) => window.clearTimeout(t));
