@@ -35,7 +35,8 @@ export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covere
     continueAfterReveal,
     playAgain,
   } = useGame();
-  // Stays as the player left it for later reveals in the same game.
+  // Stays as the player left it for later reveals, through Play Again, until
+  // they go back to the main menu (which mounts a new GameApp).
   const [fastReveal, setFastReveal] = useState(false);
 
   if (screen === "reveal" && resolution) {
