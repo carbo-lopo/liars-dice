@@ -1,4 +1,5 @@
 import type { Face } from "@engine/types/face.js";
+import { BackButton } from "../components/BackButton.js";
 import { TableFrame } from "../components/TableFrame.js";
 import { Die } from "../components/Die.js";
 import { PalificoIcon } from "../components/PalificoIcon.js";
@@ -18,9 +19,7 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 26, color: "var(--text-primary)" }}>
           How to Play
         </span>
-        <button type="button" onClick={onBack} style={ghostButtonStyle}>
-          &larr; Back
-        </button>
+        <BackButton onClick={onBack} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -217,17 +216,5 @@ const primaryButtonStyle = {
   fontFamily: "var(--font-display)",
   fontWeight: 700,
   fontSize: 15,
-  cursor: "pointer",
-} as const;
-
-const ghostButtonStyle = {
-  background: "transparent",
-  color: "var(--text-primary)",
-  border: "1px solid var(--panel-border)",
-  borderRadius: 8,
-  padding: "8px 16px",
-  fontFamily: "var(--font-display)",
-  fontWeight: 700,
-  fontSize: 14,
   cursor: "pointer",
 } as const;

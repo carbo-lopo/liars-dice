@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { callsAnyBid, raisesByOne } from "../test/scriptedBot";
 import { StrictWrapper } from "../test/strictMode";
 import { DEFAULT_SEATS, THINKING_MAX_MS, useGame, type UseGameApi } from "./useGame";
+import { silenceExpectedRenderErrors } from "../test/expectedErrors";
 
 const you: Seat = { name: "You", strategy: null };
 const ann: Seat = { name: "Ann", strategy: raisesByOne };
@@ -86,6 +87,21 @@ describe("useGame", () => {
     expect(result.current.opponents.map((o) => o.name)).toEqual(["Ann", "Cy", "Bo"]);
   });
 
+  it("ignores Continue once the game has already moved on", () => {
+    const { result } = renderGame([ann, cy, you]);
+    act(() => result.current.finishRolling());
+    act(() => vi.advanceTimersByTime(THINKING_MAX_MS));
+    act(() => result.current.finishTyping());
+    act(() => result.current.continueAfterBotAction());
+    expect(result.current.thinkingBot).toBe("Cy");
+
+    // A second press, e.g. a click just after auto-continue, must not restart Cy's thinking.
+    act(() => vi.advanceTimersByTime(THINKING_MAX_MS / 2));
+    act(() => result.current.continueAfterBotAction());
+    act(() => vi.advanceTimersByTime(THINKING_MAX_MS / 2));
+    expect(result.current.view.bidHistory.map((r) => r.bidder.name)).toEqual(["Ann", "Cy"]);
+  });
+
   it("types out the player's bid, then the next bot thinks without a Continue", () => {
     const { result } = renderGame([ann, you, cy]);
     act(() => result.current.finishRolling());
@@ -149,6 +165,7 @@ describe("useGame", () => {
   });
 
   it("refuses a table without exactly one human seat", () => {
+    silenceExpectedRenderErrors();
     expect(() => renderHook(() => useGame([ann, bo]))).toThrow(/exactly one human/);
     expect(() => renderHook(() => useGame([you, { name: "Also you", strategy: null }]))).toThrow(/exactly one human/);
   });

@@ -5,6 +5,7 @@ import { Die } from "../components/Die.js";
 export interface StartScreenProps {
   onPlay: () => void;
   onRules: () => void;
+  onOptions: () => void;
 }
 
 const DECORATIVE_DICE: { face: Face; rotate: number }[] = [
@@ -15,7 +16,7 @@ const DECORATIVE_DICE: { face: Face; rotate: number }[] = [
   { face: 4, rotate: -6 },
 ];
 
-export function StartScreen({ onPlay, onRules }: StartScreenProps) {
+export function StartScreen({ onPlay, onRules, onOptions }: StartScreenProps) {
   return (
     <TableFrame>
       <div
@@ -59,6 +60,9 @@ export function StartScreen({ onPlay, onRules }: StartScreenProps) {
           </button>
           <button type="button" onClick={onRules} style={secondaryButtonStyle}>
             Rules
+          </button>
+          <button type="button" onClick={onOptions} style={secondaryButtonStyle}>
+            Options
           </button>
         </div>
       </div>

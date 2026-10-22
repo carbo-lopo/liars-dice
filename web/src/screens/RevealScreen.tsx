@@ -5,14 +5,14 @@ import { TableFrame } from "../components/TableFrame.js";
 import { Die } from "../components/Die.js";
 import { bidLabel, faceNameForCount } from "../lib/faceNames.js";
 import { conjugate } from "../lib/grammar.js";
-import { QuitButton } from "../components/QuitButton.js";
-import { RulesButton } from "../components/RulesButton.js";
+import { HeaderButton } from "../components/HeaderButton.js";
 
 export interface RevealScreenProps {
   resolution: ChallengeResolution;
   onContinue: () => void;
   onQuit: () => void;
   onRules: () => void;
+  onOptions: () => void;
 }
 
 /** "your" for the human, "Cora's" for a bot. */
@@ -20,7 +20,7 @@ function possessive(player: Player): string {
   return player.isHuman ? "your" : `${player.name}’s`;
 }
 
-export function RevealScreen({ resolution, onContinue, onQuit, onRules }: RevealScreenProps) {
+export function RevealScreen({ resolution, onContinue, onQuit, onRules, onOptions }: RevealScreenProps) {
   const { challenger, bidder, loser, bid } = resolution;
   // The resolution records whether its own round was Palifico. By the time this
   // screen shows, the engine has already started the next round.
@@ -33,8 +33,9 @@ export function RevealScreen({ resolution, onContinue, onQuit, onRules }: Reveal
   return (
     <TableFrame>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-        <RulesButton onClick={onRules} />
-        <QuitButton onClick={onQuit} />
+        <HeaderButton onClick={onRules}>Rules</HeaderButton>
+        <HeaderButton onClick={onOptions}>Options</HeaderButton>
+        <HeaderButton onClick={onQuit}>Quit Game</HeaderButton>
       </div>
 
       <div
