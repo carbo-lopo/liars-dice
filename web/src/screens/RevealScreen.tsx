@@ -1,10 +1,11 @@
 import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import type { Face } from "@engine/types/face.js";
 import { ContinueButton } from "../components/ContinueButton.js";
+import { FastForwardButton } from "../components/FastForwardButton.js";
 import { Die } from "../components/Die.js";
 import { HeaderButton } from "../components/HeaderButton.js";
 import { TableFrame } from "../components/TableFrame.js";
-import { useRevealSequence } from "../hooks/useRevealSequence.js";
+import { FAST_FORWARD_SPEED, useRevealSequence } from "../hooks/useRevealSequence.js";
 import { bidLabel, faceName, faceNameForCount } from "../lib/faceNames.js";
 import { conjugate, possessive } from "../lib/grammar.js";
 
@@ -14,9 +15,20 @@ export interface RevealScreenProps {
   onQuit: () => void;
   onRules: () => void;
   onOptions: () => void;
+  /** The reveal runs FAST_FORWARD_SPEED times faster. */
+  fastForward: boolean;
+  onToggleFastForward: () => void;
 }
 
-export function RevealScreen({ resolution, onContinue, onQuit, onRules, onOptions }: RevealScreenProps) {
+export function RevealScreen({
+  resolution,
+  onContinue,
+  onQuit,
+  onRules,
+  onOptions,
+  fastForward,
+  onToggleFastForward,
+}: RevealScreenProps) {
   const { challenger, bidder, loser, bid } = resolution;
   // The resolution records whether its own round was Palifico. By the time this
   // screen shows, the engine has already started the next round.
@@ -30,6 +42,7 @@ export function RevealScreen({ resolution, onContinue, onQuit, onRules, onOption
   const { revealed, verdictShown } = useRevealSequence(
     hands.map((hand) => hand.dice.length),
     true,
+    fastForward ? FAST_FORWARD_SPEED : 1,
   );
 
   let start = 0;
@@ -232,6 +245,7 @@ export function RevealScreen({ resolution, onContinue, onQuit, onRules, onOption
             Revealing {possessive(current.player.isHuman, current.player.name)} dice…
           </span>
         )}
+        {!verdictShown && <FastForwardButton on={fastForward} onToggle={onToggleFastForward} />}
         <ContinueButton onContinue={onContinue} disabled={!verdictShown} />
       </div>
     </TableFrame>

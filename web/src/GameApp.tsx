@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useGame } from "./hooks/useGame.js";
 import { MainScreen } from "./screens/MainScreen.js";
 import { RevealScreen } from "./screens/RevealScreen.js";
@@ -34,12 +35,16 @@ export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covere
     continueAfterReveal,
     playAgain,
   } = useGame();
+  // Stays as the player left it for later reveals in the same game.
+  const [fastReveal, setFastReveal] = useState(false);
 
   if (screen === "reveal" && resolution) {
     return (
       <RevealScreen
         resolution={resolution}
         onContinue={continueAfterReveal}
+        fastForward={fastReveal}
+        onToggleFastForward={() => setFastReveal((on) => !on)}
         onQuit={onMainMenu}
         onRules={onOpenRules}
         onOptions={onOpenOptions}

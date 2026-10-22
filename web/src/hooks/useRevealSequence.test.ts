@@ -12,7 +12,10 @@ afterEach(() => {
 });
 
 function renderSequence(handSizes: number[], active = true) {
-  return renderHook(() => useRevealSequence(handSizes, active), { wrapper: StrictWrapper });
+  return renderHook(({ speed }) => useRevealSequence(handSizes, active, speed), {
+    wrapper: StrictWrapper,
+    initialProps: { speed: 1 },
+  });
 }
 
 describe("useRevealSequence", () => {
@@ -36,6 +39,41 @@ describe("useRevealSequence", () => {
     expect(result.current.verdictShown).toBe(false);
     act(() => vi.advanceTimersByTime(1));
     expect(result.current).toEqual({ revealed: 3, verdictShown: true });
+  });
+
+  it("divides every pause by the speed", () => {
+    const { result, rerender } = renderSequence([2, 1]);
+    rerender({ speed: 2 });
+    act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS / 2));
+    expect(result.current.revealed).toBe(1);
+    act(() => vi.advanceTimersByTime(REVEAL_GAP_MS / 2 + (REVEAL_GAP_MS + NEXT_HAND_MS) / 2));
+    expect(result.current.revealed).toBe(3);
+    act(() => vi.advanceTimersByTime(VERDICT_MS / 2));
+    expect(result.current.verdictShown).toBe(true);
+  });
+
+  it("carries on from the current die when the speed changes part-way", () => {
+    const { result, rerender } = renderSequence([3]);
+    act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS + REVEAL_GAP_MS));
+    expect(result.current.revealed).toBe(2);
+
+    rerender({ speed: 2 });
+    expect(result.current.revealed).toBe(2);
+    act(() => vi.advanceTimersByTime(REVEAL_GAP_MS / 2));
+    expect(result.current.revealed).toBe(3);
+  });
+
+  it("keeps the part of a pause already waited when the speed changes", () => {
+    const { result, rerender } = renderSequence([3]);
+    act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS + REVEAL_GAP_MS / 2));
+    expect(result.current.revealed).toBe(1);
+
+    // Half the gap is left; at double speed that takes a quarter of it.
+    rerender({ speed: 2 });
+    act(() => vi.advanceTimersByTime(REVEAL_GAP_MS / 4 - 1));
+    expect(result.current.revealed).toBe(1);
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current.revealed).toBe(2);
   });
 
   it("shows everything at once when inactive", () => {

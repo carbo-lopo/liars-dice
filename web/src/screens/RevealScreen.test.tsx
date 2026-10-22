@@ -3,7 +3,13 @@ import { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import { Player } from "@engine/models/player.js";
 import type { BotStrategy } from "@engine/types/botStrategy.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FIRST_REVEAL_MS, NEXT_HAND_MS, REVEAL_GAP_MS, VERDICT_MS } from "../hooks/useRevealSequence";
+import {
+  FAST_FORWARD_SPEED,
+  FIRST_REVEAL_MS,
+  NEXT_HAND_MS,
+  REVEAL_GAP_MS,
+  VERDICT_MS,
+} from "../hooks/useRevealSequence";
 import { StrictWrapper } from "../test/strictMode";
 import { RevealScreen } from "./RevealScreen";
 
@@ -44,16 +50,65 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function renderReveal() {
+function renderReveal({ fastForward = false } = {}) {
   const onContinue = vi.fn();
-  render(
-    <RevealScreen resolution={coraCalledByDuke()} onContinue={onContinue} onQuit={() => {}} onRules={() => {}} onOptions={() => {}} />,
-    { wrapper: StrictWrapper },
+  const onToggleFastForward = vi.fn();
+  const element = (on: boolean) => (
+    <RevealScreen
+      resolution={coraCalledByDuke()}
+      onContinue={onContinue}
+      onQuit={() => {}}
+      onRules={() => {}}
+      onOptions={() => {}}
+      fastForward={on}
+      onToggleFastForward={onToggleFastForward}
+    />
   );
-  return { onContinue };
+  const view = render(element(fastForward), { wrapper: StrictWrapper });
+  return { onContinue, onToggleFastForward, setFastForward: (on: boolean) => view.rerender(element(on)) };
 }
 
+const fastForwardButton = () => screen.queryByRole("button", { name: "Fast forward" });
+
 describe("RevealScreen", () => {
+  it("keeps Continue on screen but greyed out until the verdict", () => {
+    renderReveal();
+    expect(continueButton()).toHaveProperty("disabled", true);
+    expect(continueButton().style.visibility).toBe("visible");
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS));
+    expect(continueButton()).toHaveProperty("disabled", true);
+    act(() => vi.advanceTimersByTime(VERDICT_MS));
+    expect(continueButton()).toHaveProperty("disabled", false);
+  });
+
+  it("offers fast forward during the reveal and removes it with the verdict", () => {
+    const { onToggleFastForward } = renderReveal();
+    expect(fastForwardButton()?.getAttribute("aria-pressed")).toBe("false");
+    act(() => fastForwardButton()!.click());
+    expect(onToggleFastForward).toHaveBeenCalledTimes(1);
+
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS));
+    expect(fastForwardButton()).toBeNull();
+  });
+
+  it("runs twice as fast with fast forward on", () => {
+    renderReveal({ fastForward: true });
+    expect(fastForwardButton()?.getAttribute("aria-pressed")).toBe("true");
+    act(() => vi.advanceTimersByTime((ALL_DICE_MS + VERDICT_MS) / FAST_FORWARD_SPEED));
+    expect(count()).toBe("5");
+    expect(continueButton()).toHaveProperty("disabled", false);
+  });
+
+  it("speeds up the rest of the reveal when fast forward is turned on part-way", () => {
+    const { setFastForward } = renderReveal();
+    act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS));
+    expect(count()).toBe("1");
+
+    setFastForward(true);
+    act(() => vi.advanceTimersByTime(REVEAL_GAP_MS / FAST_FORWARD_SPEED));
+    expect(labels()[1]).toBe("Two");
+  });
+
   it("starts with every die face down and no verdict", () => {
     renderReveal();
     expect(labels()).toEqual(Array(TOTAL_DICE).fill("Hidden die"));

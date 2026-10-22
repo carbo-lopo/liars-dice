@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { prefersReducedMotion } from "../lib/motion.js";
 
 /** Pause before the first die is turned over. */
@@ -17,44 +17,69 @@ export interface RevealSequence {
   verdictShown: boolean;
 }
 
+/** How much faster the reveal runs with fast-forward on. */
+export const FAST_FORWARD_SPEED = 2;
+
 /**
  * Turns dice face up one at a time while `active`, hand after hand in the
- * order given by `handSizes`, then shows the verdict. When inactive, or for
- * users who prefer reduced motion, everything is shown at once.
+ * order given by `handSizes`, then shows the verdict. Every pause is divided
+ * by `speed`; changing it reschedules what's left from the current die. When
+ * inactive, or for users who prefer reduced motion, everything is shown at
+ * once.
  */
-export function useRevealSequence(handSizes: readonly number[], active: boolean): RevealSequence {
+export function useRevealSequence(handSizes: readonly number[], active: boolean, speed = 1): RevealSequence {
   const total = handSizes.reduce((sum, n) => sum + n, 0);
   const sizesKey = handSizes.join(",");
   const animate = active && !prefersReducedMotion();
-  const [state, setState] = useState<RevealSequence>(() =>
-    animate ? { revealed: 0, verdictShown: false } : { revealed: total, verdictShown: true },
-  );
+  const initial = (): RevealSequence =>
+    animate ? { revealed: 0, verdictShown: false } : { revealed: total, verdictShown: true };
+  const [state, setState] = useState<RevealSequence>(initial);
+  // Where the sequence has got to, when the current pause began (`since`) and
+  // the speed it has run at since then, so that a speed change keeps the part
+  // of the pause already waited instead of starting it again.
+  const progressRef = useRef({ state, since: Date.now(), speed });
+
+  const show = (next: RevealSequence) => {
+    progressRef.current = { state: next, since: Date.now(), speed: progressRef.current.speed };
+    setState(next);
+  };
 
   // Reset before paint so dice never flash face up before the sequence starts.
   useLayoutEffect(() => {
-    setState(animate ? { revealed: 0, verdictShown: false } : { revealed: total, verdictShown: true });
+    progressRef.current = { state: initial(), since: Date.now(), speed };
+    setState(progressRef.current.state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animate, sizesKey, total]);
 
   useEffect(() => {
-    if (!animate) return;
+    const progress = progressRef.current;
+    if (!animate || progress.state.verdictShown) return;
+    // Time already waited toward the next step counts at the speed it was waited at.
+    const now = Date.now();
+    let waited = (now - progress.since) * progress.speed;
+    progressRef.current = { ...progress, since: now, speed };
+
+    const handStarts = new Set(handSizes.map((_, hand) => handSizes.slice(0, hand).reduce((a, n) => a + n, 0)));
+    const pauseFor = (step: number) =>
+      step === total
+        ? VERDICT_MS
+        : step === 0
+          ? FIRST_REVEAL_MS
+          : REVEAL_GAP_MS + (handStarts.has(step) ? NEXT_HAND_MS : 0);
     const timers: number[] = [];
-    let at = FIRST_REVEAL_MS;
-    let revealed = 0;
-    handSizes.forEach((size, hand) => {
-      if (hand > 0) at += NEXT_HAND_MS;
-      for (let i = 0; i < size; i++) {
-        revealed += 1;
-        const count = revealed;
-        timers.push(window.setTimeout(() => setState({ revealed: count, verdictShown: false }), at));
-        at += REVEAL_GAP_MS;
-      }
-    });
-    const lastReveal = at - REVEAL_GAP_MS;
-    timers.push(window.setTimeout(() => setState({ revealed: total, verdictShown: true }), lastReveal + VERDICT_MS));
+    let at = 0;
+    for (let revealed = progress.state.revealed; revealed < total; revealed++) {
+      at += Math.max(0, pauseFor(revealed) - waited) / speed;
+      waited = 0;
+      const next = { revealed: revealed + 1, verdictShown: false };
+      timers.push(window.setTimeout(() => show(next), at));
+    }
+    at += Math.max(0, pauseFor(total) - waited) / speed;
+    timers.push(window.setTimeout(() => show({ revealed: total, verdictShown: true }), at));
     return () => timers.forEach((t) => window.clearTimeout(t));
     // handSizes is read through sizesKey so a new array with the same sizes doesn't restart the sequence.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animate, sizesKey, total]);
+  }, [animate, sizesKey, total, speed]);
 
   return state;
 }
