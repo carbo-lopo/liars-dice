@@ -232,7 +232,7 @@ export function RevealScreen({ resolution, onContinue, onQuit, onRules, onOption
             Revealing {possessive(current.player.isHuman, current.player.name)} dice…
           </span>
         )}
-        <ContinueButton onContinue={onContinue} hidden={!verdictShown} />
+        <ContinueButton onContinue={onContinue} disabled={!verdictShown} />
       </div>
     </TableFrame>
   );

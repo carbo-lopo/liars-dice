@@ -88,6 +88,20 @@ describe("ContinueButton", () => {
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
+  it("shows greyed out and doesn't count down or press while disabled", () => {
+    const { onContinue, rerender, button } = renderButton({ disabled: true });
+    expect(button()).toHaveProperty("disabled", true);
+    expect(button().style.visibility).toBe("visible");
+    expect(screen.queryByTestId("countdown-bar")).toBeNull();
+    fireEvent.click(button());
+    act(() => vi.advanceTimersByTime(COUNTDOWN * 5));
+    expect(onContinue).not.toHaveBeenCalled();
+
+    rerender({ disabled: false });
+    fireEvent.click(button());
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
   it("waits for a click when it has no countdown", () => {
     const { onContinue, button } = renderButton({ autoContinueMs: null });
     expect(screen.queryByTestId("countdown-bar")).toBeNull();

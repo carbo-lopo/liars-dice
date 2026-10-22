@@ -10,6 +10,8 @@ export interface ContinueButtonProps {
   onContinue: () => void;
   /** Keep the button's space but hide and disable it. */
   hidden?: boolean;
+  /** Show the button greyed out and unpressable. */
+  disabled?: boolean;
   /** Press itself after this long, shown as a shrinking bar; null to wait for a click. */
   autoContinueMs?: number | null;
   /** Hold the countdown, e.g. while another screen covers the game. */
@@ -22,7 +24,7 @@ export interface ContinueButtonProps {
  * it, a hidden page, or `paused` all hold the countdown where it is.
  */
 export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>(function ContinueButton(
-  { onContinue, hidden = false, autoContinueMs = null, paused = false },
+  { onContinue, hidden = false, disabled = false, autoContinueMs = null, paused = false },
   ref,
 ) {
   const [hovered, setHovered] = useState(false);
@@ -30,15 +32,17 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
   const pageVisible = usePageVisible();
   const hintId = useId();
 
+  const unavailable = hidden || disabled;
+
   // A disabled button can lose the pointer or focus without mouseleave or blur
   // firing, which would leave the next countdown paused for good.
   useEffect(() => {
-    if (!hidden) return;
+    if (!unavailable) return;
     setHovered(false);
     setFocused(false);
-  }, [hidden]);
+  }, [unavailable]);
 
-  const counting = !hidden && autoContinueMs !== null;
+  const counting = !unavailable && autoContinueMs !== null;
   const held = paused || hovered || focused || !pageVisible;
   const remaining = useCountdown(counting ? autoContinueMs : null, held, onContinue);
   const seconds = Math.round((autoContinueMs ?? 0) / 1000);
@@ -49,13 +53,17 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
         ref={ref}
         type="button"
         onClick={onContinue}
-        disabled={hidden}
+        disabled={unavailable}
         aria-describedby={counting ? hintId : undefined}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        style={{ ...continueButtonStyle, visibility: hidden ? "hidden" : "visible" }}
+        style={{
+          ...continueButtonStyle,
+          visibility: hidden ? "hidden" : "visible",
+          ...(disabled && { opacity: 0.45, cursor: "not-allowed", filter: "grayscale(0.6)" }),
+        }}
       >
         {counting && (
           <span

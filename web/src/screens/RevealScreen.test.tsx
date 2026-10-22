@@ -32,8 +32,7 @@ function coraCalledByDuke(): ChallengeResolution {
 const TOTAL_DICE = 14;
 const labels = () => screen.getAllByRole("img").map((die) => die.getAttribute("aria-label"));
 const count = () => screen.getByTestId("reveal-count").textContent;
-// While hidden, the button's text is hidden too, so it has no accessible name to query by.
-const continueButton = () => screen.getByText("Continue").closest("button")!;
+const continueButton = () => screen.getByRole("button", { name: "Continue" });
 
 /** Time from the first die to the last, with the pauses between hands. */
 const ALL_DICE_MS = FIRST_REVEAL_MS + (TOTAL_DICE - 1) * REVEAL_GAP_MS + 2 * NEXT_HAND_MS;
