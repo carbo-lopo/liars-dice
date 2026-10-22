@@ -21,12 +21,14 @@ export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covere
     thinkingBot,
     rolling,
     typingBid,
+    challenge,
     resolution,
     result,
     error,
     placeBid,
     call,
     continueAfterBotAction,
+    finishChallenge,
     finishRolling,
     finishTyping,
     continueAfterReveal,
@@ -56,6 +58,8 @@ export default function GameApp({ onMainMenu, onOpenRules, onOpenOptions, covere
       isYourTurn={isYourTurn}
       awaitingContinue={awaitingContinue}
       covered={covered}
+      challenge={challenge}
+      onChallengeShown={finishChallenge}
       thinkingBot={thinkingBot}
       rolling={rolling}
       typingBid={typingBid}

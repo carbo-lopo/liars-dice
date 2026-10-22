@@ -1,10 +1,9 @@
 import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
-import type { Player } from "@engine/models/player.js";
 import type { Face } from "@engine/types/face.js";
 import { TableFrame } from "../components/TableFrame.js";
 import { Die } from "../components/Die.js";
 import { bidLabel, faceNameForCount } from "../lib/faceNames.js";
-import { conjugate } from "../lib/grammar.js";
+import { conjugate, possessive } from "../lib/grammar.js";
 import { HeaderButton } from "../components/HeaderButton.js";
 
 export interface RevealScreenProps {
@@ -13,11 +12,6 @@ export interface RevealScreenProps {
   onQuit: () => void;
   onRules: () => void;
   onOptions: () => void;
-}
-
-/** "your" for the human, "Cora's" for a bot. */
-function possessive(player: Player): string {
-  return player.isHuman ? "your" : `${player.name}’s`;
 }
 
 export function RevealScreen({ resolution, onContinue, onQuit, onRules, onOptions }: RevealScreenProps) {
@@ -47,7 +41,7 @@ export function RevealScreen({ resolution, onContinue, onQuit, onRules, onOption
           color: "var(--text-primary)",
         }}
       >
-        {challenger.name} {conjugate(challenger.isHuman, "call")} LIAR on {possessive(bidder)} bid of{" "}
+        {challenger.name} {conjugate(challenger.isHuman, "call")} LIAR on {possessive(bidder.isHuman, bidder.name)} bid of{" "}
         {bidLabel(bid.quantity, bid.face)}!
       </div>
 

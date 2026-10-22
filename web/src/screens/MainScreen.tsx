@@ -7,6 +7,8 @@ import { CurrentBidCard, BidHistoryCard } from "../components/BidCards.js";
 import { HandRow } from "../components/HandRow.js";
 import { ActionBar } from "../components/ActionBar.js";
 import { PalificoIcon } from "../components/PalificoIcon.js";
+import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
+import { ChallengeSplash } from "../components/ChallengeSplash.js";
 import { AUTO_CONTINUE_MS, ContinueButton } from "../components/ContinueButton.js";
 import { HeaderButton } from "../components/HeaderButton.js";
 import { useSettings } from "../settings/settings.js";
@@ -25,6 +27,9 @@ export interface MainScreenProps {
   awaitingContinue: boolean;
   /** Another screen (Rules, Options) is covering the game. */
   covered: boolean;
+  /** A call to announce with the splash over the table. */
+  challenge: ChallengeResolution | null;
+  onChallengeShown: () => void;
   thinkingBot: string | null;
   rolling: boolean;
   typingBid: boolean;
@@ -45,6 +50,8 @@ export function MainScreen({
   isYourTurn,
   awaitingContinue,
   covered,
+  challenge,
+  onChallengeShown,
   thinkingBot,
   rolling,
   typingBid,
@@ -202,6 +209,7 @@ export function MainScreen({
           />
         </div>
       )}
+      {challenge && <ChallengeSplash resolution={challenge} onDone={onChallengeShown} />}
     </TableFrame>
   );
 }

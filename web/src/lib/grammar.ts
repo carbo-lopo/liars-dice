@@ -9,3 +9,8 @@
 export function conjugate(isHuman: boolean, base: string): string {
   return isHuman ? base : `${base}s`;
 }
+
+/** "your" for the human player ("Duke calls Liar on your bid"), "Cora’s" for a bot. */
+export function possessive(isHuman: boolean, name: string): string {
+  return isHuman ? "your" : `${name}’s`;
+}
