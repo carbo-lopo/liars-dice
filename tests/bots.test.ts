@@ -41,6 +41,16 @@ describe.each(BOT_STRATEGIES.map((s) => [s.id, s] as const))("%s bot", (_id, bot
     }
   });
 
+  it("calls when the current bid can't be raised", () => {
+    const atCap = [
+      makeView({ hand: [1, 1, 1], totalDice: 5, currentBid: { quantity: 5, face: 1 } }),
+      makeView({ hand: [3, 3], totalDice: 5, currentBid: { quantity: 5, face: 3 }, isPalifico: true }),
+    ];
+    for (const view of atCap) {
+      for (let trial = 0; trial < 20; trial++) expect(bot.decide(view)).toEqual({ type: "call" });
+    }
+  });
+
   it("always responds with a legal raise or a call, including under Palifico", () => {
     for (let trial = 0; trial < 150; trial++) {
       const hand = rollHand(3);

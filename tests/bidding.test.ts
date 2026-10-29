@@ -108,3 +108,46 @@ describe("generateCandidateBids", () => {
     }
   });
 });
+
+describe("the cap at the dice in play", () => {
+  it("allows a bid of every die in play but not one more", () => {
+    expect(isValidRaise(normal(null, 5), { quantity: 5, face: 4 }).valid).toBe(true);
+    expect(isValidRaise(normal(null, 5), { quantity: 6, face: 4 }).valid).toBe(false);
+    expect(isValidRaise(normal({ quantity: 4, face: 4 }, 5), { quantity: 5, face: 4 }).valid).toBe(true);
+    expect(isValidRaise(palifico({ quantity: 4, face: 3 }, 5), { quantity: 6, face: 3 }).valid).toBe(false);
+  });
+
+  it("explains the cap when a bid goes over it", () => {
+    const result = isValidRaise(normal(null, 5), { quantity: 6, face: 4 });
+    expect(result.valid).toBe(false);
+    if (!result.valid) expect(result.reason).toContain("5 dice in play");
+  });
+
+  it("can rule out switching off Aces near the cap", () => {
+    // Off Aces needs double plus one: 3 Aces would need 7 of another face, but only 5 dice are in play.
+    const candidates = generateCandidateBids(normal({ quantity: 3, face: 1 }, 5));
+    expect(candidates).toEqual([
+      { quantity: 4, face: 1 },
+      { quantity: 5, face: 1 },
+    ]);
+  });
+
+  it("still allows switching onto Aces from a bid that claims every die", () => {
+    // Onto Aces needs only half, rounded up: 3 of 5.
+    expect(generateCandidateBids(normal({ quantity: 5, face: 6 }, 5))).toEqual([
+      { quantity: 3, face: 1 },
+      { quantity: 4, face: 1 },
+      { quantity: 5, face: 1 },
+    ]);
+  });
+
+  it("leaves no raise once Aces or a Palifico bid claim every die, so the only move is to call", () => {
+    expect(generateCandidateBids(normal({ quantity: 5, face: 1 }, 5))).toEqual([]);
+    expect(generateCandidateBids(palifico({ quantity: 5, face: 3 }, 5))).toEqual([]);
+  });
+
+  it("always leaves an opening bid, even with one die in play", () => {
+    expect(generateCandidateBids(normal(null, 1))).toHaveLength(6);
+    expect(generateCandidateBids(palifico(null, 1))).toHaveLength(6);
+  });
+});

@@ -29,15 +29,15 @@ export function minimumNextQuantity(fromQuantity: number, fromFace: Face, toFace
 }
 
 /**
- * Bids above the dice in play are legal (and always lose), so this only
- * rejects non-positive quantities and absurd input.
+ * A bid claims between one die and every die in play; a claim above the dice
+ * in play could never be true, so it isn't allowed.
  */
 function checkQuantity(next: Bid, totalDiceInPlay: number): BidValidation {
   if (!Number.isInteger(next.quantity) || next.quantity < 1) {
     return invalid("Quantity must be a positive integer.");
   }
-  if (next.quantity > totalDiceInPlay * 8) {
-    return invalid("Quantity is absurdly high.");
+  if (next.quantity > totalDiceInPlay) {
+    return invalid(`A bid can't claim more than the ${totalDiceInPlay} dice in play.`);
   }
   return VALID;
 }
@@ -80,13 +80,13 @@ export function isValidRaise(rules: BiddingRules, next: Bid): BidValidation {
 }
 
 /**
- * Every legal next bid with a quantity up to `totalDiceInPlay + slack`,
- * cheapest raise first.
+ * Every legal next bid, cheapest raise first. Empty when the current bid
+ * can't be raised, which leaves calling it as the only move.
  */
-export function generateCandidateBids(rules: BiddingRules, slack = 3): Bid[] {
+export function generateCandidateBids(rules: BiddingRules): Bid[] {
   const lockedFace = rules.isPalifico ? rules.currentBid?.face : undefined;
   const faces = lockedFace === undefined ? ALL_FACES : [lockedFace];
-  const maxQuantity = rules.totalDiceInPlay + slack;
+  const maxQuantity = rules.totalDiceInPlay;
 
   const candidates: Bid[] = [];
   for (const face of faces) {
