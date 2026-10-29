@@ -40,4 +40,26 @@ describe("OptionsScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "← Back" }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
+
+  it("switches sound effects and music independently, and saves both", () => {
+    renderOptions();
+    const effects = screen.getByRole("switch", { name: "Sound effects" });
+    const music = screen.getByRole("switch", { name: "Music" });
+    expect(effects).toHaveProperty("checked", true);
+    expect(music).toHaveProperty("checked", true);
+
+    fireEvent.click(music);
+    expect(music).toHaveProperty("checked", false);
+    expect(effects).toHaveProperty("checked", true);
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY)!)).toEqual({ ...DEFAULT_SETTINGS, music: false });
+  });
+
+  it("credits the music under its switch, with links to the source and the licence", () => {
+    renderOptions();
+    const music = screen.getByRole("switch", { name: "Music" });
+    const credit = document.getElementById(music.getAttribute("aria-describedby")!)!;
+    expect(credit.textContent).toContain("“Vibing Over Venus” by Kevin MacLeod");
+    const links = [...credit.querySelectorAll("a")].map((a) => a.getAttribute("href"));
+    expect(links).toEqual(["https://incompetech.com", "https://creativecommons.org/licenses/by/4.0/"]);
+  });
 });

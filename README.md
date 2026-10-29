@@ -58,9 +58,14 @@ src/
     roster.ts          The strategies available to the CLI
   cli/          Terminal game: main loop, input parsing, rendering, options
 web/            Browser game (React + Vite); imports the engine from src/ via @engine
+tools/          process-sounds.sh, which prepares the browser game's sound files
 tests/          Vitest suite, including full-game integration tests
 ```
 
 To add a matrix bot, extend `AbstractMatrixStrategy` with new tolerance
 values. A different style of bot can implement `BotStrategy` directly. Either
 way, list it in `src/bots/roster.ts`.
+
+## Credits
+
+The browser version's music and sound effects, with their licences, are listed in [CREDITS.md](CREDITS.md).
