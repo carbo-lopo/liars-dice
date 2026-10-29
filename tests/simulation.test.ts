@@ -29,7 +29,7 @@ describe("full games", () => {
       const game = playToCompletion(engine, (e) => {
         const { currentBid, totalDice } = e.game.round;
         if (currentBid === null) e.bid({ quantity: 1, face: 2 });
-        else if (currentBid.quantity > totalDice) e.call();
+        else if (currentBid.quantity >= totalDice) e.call();
         else e.bid({ quantity: currentBid.quantity + 1, face: currentBid.face });
       });
       expect(game.activePlayers).toEqual([game.winner]);
