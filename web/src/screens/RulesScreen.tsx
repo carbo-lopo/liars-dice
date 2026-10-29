@@ -36,7 +36,8 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
             Each new bid must beat the last one. Between Twos through Sixes, either claim more dice on any face, or
             keep the same count and move to a higher face. Aces work on a different scale because they are wild:
             switching to Aces needs at least half the count (rounded up), and switching away from Aces needs at
-            least double the count plus one.
+            least double the count plus one. No bid can claim more dice than are on the table; once a bid can&rsquo;t
+            be raised any further, the only move left is to call it.
           </p>
           <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
             <BidTransitionExample from="3 × Fives" to="4 × Twos" note="higher quantity, any face" />

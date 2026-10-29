@@ -7,14 +7,15 @@ import { faceName } from "../lib/faceNames.js";
 
 const ALL_FACES: Face[] = [1, 2, 3, 4, 5, 6];
 
-/** Smallest legal quantity for a bid on `face`, found by asking the engine's own validator. */
-function minQuantityForFace(rules: BiddingRules, face: Face): number {
-  if (!rules.currentBid) return 1;
-  const ceiling = rules.totalDiceInPlay * 8;
-  for (let q = 1; q <= ceiling; q++) {
+/**
+ * Smallest legal quantity for a bid on `face`, found by asking the engine's
+ * own validator, or null when no quantity up to the dice in play is legal.
+ */
+function minQuantityForFace(rules: BiddingRules, face: Face): number | null {
+  for (let q = 1; q <= rules.totalDiceInPlay; q++) {
     if (isValidRaise(rules, { quantity: q, face }).valid) return q;
   }
-  return rules.currentBid.quantity + 1;
+  return null;
 }
 
 /** In a Palifico round the opening bid's face is locked for the rest of the round. */
@@ -41,11 +42,21 @@ export function ActionBar({
 }: ActionBarProps) {
   const { currentBid } = rules;
   const lockedFace = lockedFaceOf(rules);
-  const facesAvailable: Face[] = lockedFace !== null ? [lockedFace] : ALL_FACES;
-  const defaultFace = (): Face => lockedFace ?? currentBid?.face ?? 2;
+  const maxQty = rules.totalDiceInPlay;
+  // Faces with at least one legal bid; none at all means the bid can only be called.
+  const legalFaces = ALL_FACES.filter(
+    (face) => (lockedFace === null || face === lockedFace) && minQuantityForFace(rules, face) !== null,
+  );
+  const canRaise = legalFaces.length > 0;
+  const defaultFace = (): Face => {
+    const preferred = lockedFace ?? currentBid?.face ?? 2;
+    if (legalFaces.includes(preferred)) return preferred;
+    return legalFaces.find((face) => face !== 1) ?? legalFaces[0] ?? preferred;
+  };
+  const startingQuantity = (face: Face) => minQuantityForFace(rules, face) ?? maxQty;
 
   const [selectedFace, setSelectedFace] = useState<Face>(defaultFace());
-  const [quantity, setQuantity] = useState<number>(() => minQuantityForFace(rules, defaultFace()));
+  const [quantity, setQuantity] = useState<number>(() => startingQuantity(defaultFace()));
 
   // Re-anchor whenever the underlying bid situation actually changes (a new
   // bid landed, a new round started, Palifico kicked in, etc.) -- not on
@@ -55,22 +66,23 @@ export function ActionBar({
   useEffect(() => {
     const face = defaultFace();
     setSelectedFace(face);
-    setQuantity(minQuantityForFace(rules, face));
+    setQuantity(startingQuantity(face));
     onFaceChange?.(face);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bidKey]);
 
-  const minQty = minQuantityForFace(rules, selectedFace);
+  const minQty = startingQuantity(selectedFace);
+  const raiseDisabled = disabled || !canRaise;
 
   const handleFaceClick = (face: Face) => {
-    if (disabled || !facesAvailable.includes(face)) return;
+    if (raiseDisabled || !legalFaces.includes(face)) return;
     setSelectedFace(face);
-    setQuantity(minQuantityForFace(rules, face));
+    setQuantity(startingQuantity(face));
     onFaceChange?.(face);
   };
 
   const showAceNote =
-    !!currentBid && !rules.isPalifico && (selectedFace === 1) !== (currentBid.face === 1);
+    canRaise && !!currentBid && !rules.isPalifico && (selectedFace === 1) !== (currentBid.face === 1);
   const aceNoteDetail = currentBid && selectedFace === 1 ? "halved, rounded up" : "doubled, plus one";
 
   return (
@@ -98,11 +110,17 @@ export function ActionBar({
         </div>
       )}
 
+      {!canRaise && (
+        <span role="status" style={{ fontSize: 13, color: "var(--text-secondary)", fontStyle: "italic" }}>
+          This bid already claims every die it can, so it can&rsquo;t be raised. Call it.
+        </span>
+      )}
+
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
           <div
             role="group"
-            aria-label={`Quantity, minimum ${minQty}`}
+            aria-label={`Quantity, ${minQty} to ${maxQty}`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -115,7 +133,7 @@ export function ActionBar({
           >
             <button
               type="button"
-              disabled={disabled || quantity <= minQty}
+              disabled={raiseDisabled || quantity <= minQty}
               onClick={() => setQuantity((q) => Math.max(minQty, q - 1))}
               aria-label="Decrease quantity"
               style={stepperButtonStyle}
@@ -140,8 +158,8 @@ export function ActionBar({
             </span>
             <button
               type="button"
-              disabled={disabled}
-              onClick={() => setQuantity((q) => q + 1)}
+              disabled={raiseDisabled || quantity >= maxQty}
+              onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
               aria-label="Increase quantity"
               style={stepperButtonStyle}
             >
@@ -149,19 +167,19 @@ export function ActionBar({
             </button>
           </div>
           <span aria-hidden style={{ fontSize: 10, color: "var(--gold)", textAlign: "center" }}>
-            min. {minQty}
+            min. {minQty} · max {maxQty}
           </span>
         </div>
 
         <div role="group" aria-label="Face" style={{ display: "flex", gap: 6 }}>
           {ALL_FACES.map((face) => {
-            const available = facesAvailable.includes(face);
+            const available = legalFaces.includes(face);
             const isSelected = face === selectedFace;
             return (
               <button
                 key={face}
                 type="button"
-                disabled={disabled || !available}
+                disabled={raiseDisabled || !available}
                 onClick={() => handleFaceClick(face)}
                 title={faceName(face)}
                 aria-label={faceName(face)}
@@ -172,7 +190,7 @@ export function ActionBar({
                   borderRadius: 7,
                   fontSize: 13,
                   fontWeight: 700,
-                  cursor: disabled || !available ? "default" : "pointer",
+                  cursor: raiseDisabled || !available ? "default" : "pointer",
                   background: isSelected ? "var(--parchment)" : "var(--panel-bg)",
                   border: isSelected ? "2px solid var(--gold)" : "1px solid var(--panel-border)",
                   color: isSelected ? "var(--ink)" : "var(--text-secondary)",
@@ -189,9 +207,9 @@ export function ActionBar({
 
         <button
           type="button"
-          disabled={disabled}
+          disabled={raiseDisabled}
           onClick={() => onPlaceBid({ quantity, face: selectedFace })}
-          style={primaryButtonStyle(disabled)}
+          style={primaryButtonStyle(raiseDisabled)}
         >
           Place Bid
         </button>
