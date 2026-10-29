@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import type { Face } from "@engine/types/face.js";
+import { useSound } from "../audio/SoundProvider.js";
 import { ContinueButton } from "../components/ContinueButton.js";
 import { FastForwardButton } from "../components/FastForwardButton.js";
 import { Die } from "../components/Die.js";
@@ -59,6 +60,20 @@ export function RevealScreen({
     if (covered) return;
     (verdictShown ? continueRef : fastForwardRef).current?.focus();
   }, [verdictShown, covered]);
+
+  // A chime for each die that turns over and counts. With reduced motion the
+  // reveal starts out complete, so nothing is newly turned and it stays quiet.
+  const { playSound } = useSound();
+  const allDice = hands.flatMap((hand) => hand.dice);
+  const chimedThroughRef = useRef(revealed);
+  useEffect(() => {
+    // Several dice can turn in one render if their timers fire together.
+    for (let die = chimedThroughRef.current; die < revealed; die++) {
+      if (countsFor(allDice[die]!)) playSound("counted");
+    }
+    chimedThroughRef.current = Math.max(chimedThroughRef.current, revealed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealed]);
 
   let start = 0;
   const rows = hands.map(({ player, dice }) => {

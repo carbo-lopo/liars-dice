@@ -207,6 +207,7 @@ export function ActionBar({
 
         <button
           type="button"
+          data-sound="strong"
           disabled={raiseDisabled}
           onClick={() => onPlaceBid({ quantity, face: selectedFace })}
           style={primaryButtonStyle(raiseDisabled)}
@@ -215,6 +216,7 @@ export function ActionBar({
         </button>
         <button
           type="button"
+          data-sound="strong"
           disabled={disabled || !canCall}
           onClick={onCall}
           style={dangerButtonStyle(disabled || !canCall)}

@@ -4,7 +4,8 @@ import type { ChallengeResolution } from "@engine/models/challengeResolution.js"
 import { DiceRevealed } from "@engine/events/gameEvent.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StrictWrapper } from "../test/strictMode";
-import { ChallengeSplash } from "./ChallengeSplash";
+import { fakeAudio } from "../test/fakeAudio";
+import { ChallengeSplash, STAMP_HIT_MS } from "./ChallengeSplash";
 
 /** A real resolution: `bidder` opens with 2 × Fives and `challenger` calls it. */
 function callOn(bidder: { name: string; human: boolean }, challenger: { name: string; human: boolean }) {
@@ -68,5 +69,16 @@ describe("ChallengeSplash", () => {
 
     fireEvent.click(button);
     expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("plays the stamp once, as the stamp hits", () => {
+    const { played, Wrapper } = fakeAudio();
+    render(<ChallengeSplash resolution={callOn(cora, duke)} onContinue={() => {}} />, { wrapper: Wrapper });
+    act(() => vi.advanceTimersByTime(STAMP_HIT_MS - 1));
+    expect(played).toEqual([]);
+    act(() => vi.advanceTimersByTime(1));
+    expect(played).toEqual(["stamp"]);
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(played).toEqual(["stamp"]);
   });
 });

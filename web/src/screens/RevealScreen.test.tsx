@@ -12,6 +12,7 @@ import {
 } from "../hooks/useRevealSequence";
 import { preferReducedMotion } from "../test/motion";
 import { StrictWrapper } from "../test/strictMode";
+import { fakeAudio } from "../test/fakeAudio";
 import { RevealScreen } from "./RevealScreen";
 
 const bot: BotStrategy = { id: "idle", label: "Idle", decide: () => ({ type: "call" }) };
@@ -201,5 +202,49 @@ describe("RevealScreen", () => {
 
     act(() => continueButton().click());
     expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("chimes once for each die that counts, and plays nothing else", () => {
+    const { played, Wrapper } = fakeAudio();
+    render(
+      <RevealScreen
+        resolution={coraCalledByDuke()}
+        onContinue={() => {}}
+        onQuit={() => {}}
+        onRules={() => {}}
+        onOptions={() => {}}
+        fastForward={false}
+        onToggleFastForward={() => {}}
+        covered={false}
+      />,
+      { wrapper: Wrapper },
+    );
+    act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS));
+    expect(played).toEqual(["counted"]); // Cora's first die is a Five
+    act(() => vi.advanceTimersByTime(REVEAL_GAP_MS));
+    expect(played).toEqual(["counted"]); // a Two doesn't count
+
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS));
+    expect(played).toEqual(Array(5).fill("counted"));
+  });
+
+  it("is silent when the reveal is shown at once for reduced motion", () => {
+    preferReducedMotion();
+    const { played, Wrapper } = fakeAudio();
+    render(
+      <RevealScreen
+        resolution={coraCalledByDuke()}
+        onContinue={() => {}}
+        onQuit={() => {}}
+        onRules={() => {}}
+        onOptions={() => {}}
+        fastForward={false}
+        onToggleFastForward={() => {}}
+        covered={false}
+      />,
+      { wrapper: Wrapper },
+    );
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(played).toEqual([]);
   });
 });
