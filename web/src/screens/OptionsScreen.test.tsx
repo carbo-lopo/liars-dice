@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AUTO_CONTINUE_MS } from "../components/ContinueButton";
-import { SETTINGS_STORAGE_KEY, SettingsProvider } from "../settings/settings";
+import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, SettingsProvider } from "../settings/settings";
 import { OptionsScreen } from "./OptionsScreen";
 
 afterEach(() => {
@@ -25,7 +25,7 @@ describe("OptionsScreen", () => {
 
     fireEvent.click(toggle());
     expect(toggle()).toHaveProperty("checked", false);
-    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY)!)).toEqual({ autoContinue: false });
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY)!)).toEqual({ ...DEFAULT_SETTINGS, autoContinue: false });
   });
 
   it("links the switch to a description that gives the real countdown length", () => {

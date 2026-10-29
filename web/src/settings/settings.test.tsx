@@ -27,11 +27,17 @@ describe("settings", () => {
     const first = renderHook(() => useSettings(), { wrapper });
     act(() => first.result.current.updateSettings({ autoContinue: false }));
     expect(first.result.current.settings.autoContinue).toBe(false);
-    expect(saved()).toEqual({ autoContinue: false });
+    expect(saved()).toEqual({ ...DEFAULT_SETTINGS, autoContinue: false });
     first.unmount();
 
     const next = renderHook(() => useSettings(), { wrapper });
     expect(next.result.current.settings.autoContinue).toBe(false);
+  });
+
+  it("keeps each saved setting and fills the rest from the defaults", () => {
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, '{"music":false,"soundEffects":"loud"}');
+    const { result } = renderHook(() => useSettings(), { wrapper });
+    expect(result.current.settings).toEqual({ ...DEFAULT_SETTINGS, music: false });
   });
 
   it("ignores saved values that are missing, the wrong type, or not JSON", () => {
