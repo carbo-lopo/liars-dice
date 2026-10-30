@@ -1,7 +1,10 @@
+import { usePhoneLayout } from "../hooks/usePhoneLayout.js";
+
 /** "← Back", top right of a screen opened over another (Rules, Options). */
 export function BackButton({ onClick }: { onClick: () => void }) {
+  const phone = usePhoneLayout();
   return (
-    <button type="button" onClick={onClick} style={backButtonStyle}>
+    <button type="button" onClick={onClick} style={phone ? { ...backButtonStyle, minHeight: 44 } : backButtonStyle}>
       &larr; Back
     </button>
   );
