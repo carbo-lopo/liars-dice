@@ -6,8 +6,13 @@ import { useSound } from "../audio/SoundProvider.js";
 import { prefersReducedMotion } from "../lib/motion.js";
 import { ContinueButton } from "./ContinueButton.js";
 
-/** When the stamp hits in its 0.38 s drop (stamp-in in global.css), where its sound plays. */
-export const STAMP_HIT_MS = 270;
+/**
+ * When the stamp hits in its 0.38 s drop (stamp-in in global.css), where its
+ * sound plays. With that animation's easing it reaches full size about 105 ms
+ * in, then briefly overshoots; the sound starts a little earlier to allow for
+ * the browser's audio output delay.
+ */
+export const STAMP_HIT_MS = 100;
 
 /**
  * Dims the table and stamps "LIAR!" across it, naming who called whose bid,
