@@ -79,8 +79,8 @@ export function GameMenu({ onRules, onOptions, onQuit }: GameMenuProps) {
 }
 
 const menuButtonStyle = {
-  width: 44,
-  height: 44,
+  width: 40,
+  height: 40,
   borderRadius: 10,
   border: "1px solid var(--panel-border)",
   background: "var(--panel-bg)",

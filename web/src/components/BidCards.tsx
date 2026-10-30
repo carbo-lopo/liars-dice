@@ -57,11 +57,11 @@ export function CurrentBidCard({
         background: "var(--parchment)",
         border: `${compact ? 5 : 6}px solid var(--parchment-border)`,
         borderRadius: 6,
-        padding: compact ? "26px 16px 12px" : "18px 22px",
+        padding: compact ? "20px 14px 10px" : "18px 22px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        gap: 6,
+        gap: compact ? 3 : 6,
         boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
       }}
     >
@@ -69,10 +69,10 @@ export function CurrentBidCard({
         role="status"
         style={{
           position: "absolute",
-          top: compact ? 8 : 14,
-          left: compact ? 16 : 22,
-          right: compact ? 16 : 22,
-          fontSize: compact ? 12 : 13,
+          top: compact ? 5 : 14,
+          left: compact ? 14 : 22,
+          right: compact ? 14 : 22,
+          fontSize: compact ? 11 : 13,
           fontStyle: "italic",
           color: "#7A6A4E",
         }}
@@ -88,7 +88,7 @@ export function CurrentBidCard({
       {bid ? (
         <span
           aria-hidden={typing}
-          style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: compact ? 32 : 38, color: "var(--ink)" }}
+          style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: compact ? 28 : 38, color: "var(--ink)" }}
         >
           {shownLabel}
           {typing && <span className="typing-caret">|</span>}

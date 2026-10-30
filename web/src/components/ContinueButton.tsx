@@ -76,13 +76,6 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
     }, LONG_PRESS_MS);
   };
 
-  const endPress = () => {
-    cancelLongPress();
-    // Any click from this release arrives before the timeout runs; some browsers
-    // send none after a long press, so the flag mustn't outlive the release.
-    if (swallowClick.current) window.setTimeout(() => (swallowClick.current = false), 0);
-  };
-
   const click = () => {
     if (swallowClick.current) {
       swallowClick.current = false;
@@ -98,9 +91,12 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
         type="button"
         onClick={click}
         onPointerDown={startPress}
-        onPointerUp={endPress}
+        onPointerUp={cancelLongPress}
         onPointerCancel={cancelLongPress}
         onPointerLeave={cancelLongPress}
+        // Some browsers send no click after a long press, so the next press, by
+        // touch or by key, clears the flag rather than having it swallowed.
+        onKeyDown={() => (swallowClick.current = false)}
         // A long press would otherwise open the browser's own menu or select the label.
         onContextMenu={counting ? (event) => event.preventDefault() : undefined}
         disabled={unavailable}
@@ -161,7 +157,7 @@ const continueButtonStyle = {
 
 const blockStyle = {
   width: "100%",
-  minHeight: 56,
+  minHeight: 50,
   borderRadius: 12,
-  fontSize: 18,
+  fontSize: 17,
 } as const;

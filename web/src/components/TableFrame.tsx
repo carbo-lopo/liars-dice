@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { usePhoneLayout } from "../hooks/usePhoneLayout.js";
 
 /** Padding inside the phone layout's felt; the game table's dock reaches past it to the screen's edges. */
-export const PHONE_FELT_PADDING = 16;
+export const PHONE_FELT_PADDING = 12;
 
 /**
  * The felt the game is played on. On a wide screen it sits in a wooden rail;
@@ -22,7 +22,7 @@ export function TableFrame({ children }: { children: ReactNode }) {
           padding: PHONE_FELT_PADDING,
           display: "flex",
           flexDirection: "column",
-          gap: 12,
+          gap: 10,
           boxSizing: "border-box",
         }}
       >
