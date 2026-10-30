@@ -1,9 +1,9 @@
-import type { Face } from "@engine/types/face.js";
-import { Die } from "./Die.js";
 import { useEffect, useRef } from "react";
+import type { Face } from "@engine/types/face.js";
 import { useSound } from "../audio/SoundProvider.js";
 import { useDiceRoll } from "../hooks/useDiceRoll.js";
 import { prefersReducedMotion } from "../lib/motion.js";
+import { Die } from "./Die.js";
 
 export interface HandRowProps {
   dice: readonly Face[];

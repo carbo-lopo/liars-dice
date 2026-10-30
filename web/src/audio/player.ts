@@ -8,6 +8,8 @@ export interface SoundPlayer {
   play(name: SoundName, semitones?: number): void;
   /** Loops `name` from a random point until the returned function is called, which fades it out. */
   loop(name: SoundName): () => void;
+  /** Holds all sound, including any already playing, e.g. while the page is hidden. */
+  setSuspended(suspended: boolean): void;
 }
 
 /** Plays or pauses the looping background music. */
@@ -18,22 +20,15 @@ export interface MusicPlayer {
 /** How long a loop takes to fade out when stopped, so it doesn't end with a click. */
 const LOOP_FADE_S = 0.04;
 
-type AudioContextClass = typeof AudioContext;
-
-function audioContextClass(): AudioContextClass | null {
-  if (typeof AudioContext !== "undefined") return AudioContext;
-  // Older Safari only has the prefixed constructor.
-  return (window as Window & { webkitAudioContext?: AudioContextClass }).webkitAudioContext ?? null;
-}
-
 /**
  * Sound effects through the Web Audio API: each file is fetched and decoded
  * once, and every play starts a fresh source, so a sound can overlap itself.
  * Where Web Audio isn't available, it stays silent.
  */
 export function createWebAudioPlayer(): SoundPlayer {
-  const Context = audioContextClass();
+  const supported = typeof AudioContext !== "undefined";
   let context: AudioContext | null = null;
+  let suspended = false;
   const buffers = new Map<SoundName, Promise<AudioBuffer | null>>();
 
   const load = (ctx: AudioContext, name: SoundName) => {
@@ -42,7 +37,11 @@ export function createWebAudioPlayer(): SoundPlayer {
       buffer = fetch(SOUND_URLS[name])
         .then((response) => response.arrayBuffer())
         .then((data) => ctx.decodeAudioData(data))
-        .catch(() => null);
+        .catch(() => {
+          // Forget the failure, so a later play tries again.
+          buffers.delete(name);
+          return null;
+        });
       buffers.set(name, buffer);
     }
     return buffer;
@@ -50,9 +49,9 @@ export function createWebAudioPlayer(): SoundPlayer {
 
   return {
     unlock() {
-      if (!Context) return;
-      context ??= new Context();
-      if (context.state === "suspended") void context.resume();
+      if (!supported) return;
+      context ??= new AudioContext();
+      if (context.state === "suspended" && !suspended) void context.resume();
       for (const name of Object.keys(SOUND_URLS) as SoundName[]) void load(context, name);
     },
     play(name, semitones = 0) {
@@ -94,6 +93,11 @@ export function createWebAudioPlayer(): SoundPlayer {
         stopped = true;
         fadeOut?.();
       };
+    },
+    setSuspended(value) {
+      suspended = value;
+      if (!context) return;
+      void (suspended ? context.suspend() : context.resume());
     },
   };
 }

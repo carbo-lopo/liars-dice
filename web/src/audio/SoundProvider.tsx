@@ -21,6 +21,9 @@ const SoundContext = createContext<SoundApi>({
   startLoop: () => () => {},
 });
 
+/** Events that count as a user gesture, which browsers require before audio can start. */
+const GESTURES = ["pointerdown", "pointerup", "touchend", "click", "keydown"] as const;
+
 export function useSound(): SoundApi {
   return useContext(SoundContext);
 }
@@ -48,12 +51,17 @@ export function SoundProvider({
   const [music] = useState(() => givenMusic ?? createMusicPlayer());
   const [unlocked, setUnlocked] = useState(false);
   const pageVisible = usePageVisible();
-  const effectsOnRef = useLatestRef(settings.soundEffects);
+  // Effects only play while they're on and the page can be seen.
+  const effectsOnRef = useLatestRef(settings.soundEffects && pageVisible);
+  const musicWantedRef = useLatestRef(settings.music && pageVisible);
   const lastShakeRef = useRef<ShakeName | null>(null);
 
   useEffect(() => {
     const unlock = () => {
       player.unlock();
+      // Some browsers (iOS Safari) only start media from inside the gesture
+      // itself, so every press asks; it does nothing once the music is playing.
+      if (musicWantedRef.current) music.setPlaying(true);
       setUnlocked(true);
     };
     const click = (event: MouseEvent) => {
@@ -63,20 +71,23 @@ export function SoundProvider({
       if (kind === "none") return;
       player.play(kind === "strong" ? "clickStrong" : "click");
     };
-    // Capture runs before React's handlers, while the button is still as it was pressed.
-    window.addEventListener("pointerdown", unlock, true);
-    window.addEventListener("keydown", unlock, true);
+    // A touch only counts as a gesture once it ends, so the end of a press
+    // unlocks as well as its start. Capture runs before React's handlers, while
+    // the button is still as it was pressed.
+    for (const type of GESTURES) window.addEventListener(type, unlock, true);
     window.addEventListener("click", click, true);
     return () => {
-      window.removeEventListener("pointerdown", unlock, true);
-      window.removeEventListener("keydown", unlock, true);
+      for (const type of GESTURES) window.removeEventListener(type, unlock, true);
       window.removeEventListener("click", click, true);
     };
-  }, [player, effectsOnRef]);
+  }, [player, music, effectsOnRef, musicWantedRef]);
 
   useEffect(() => {
     music.setPlaying(settings.music && unlocked && pageVisible);
   }, [music, settings.music, unlocked, pageVisible]);
+
+  // A hidden page holds the effects too, including a loop already playing.
+  useEffect(() => player.setSuspended(!pageVisible), [player, pageVisible]);
 
   // Stop the music if the provider goes away.
   useEffect(() => () => music.setPlaying(false), [music]);

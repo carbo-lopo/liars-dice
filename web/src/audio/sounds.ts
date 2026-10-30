@@ -7,9 +7,9 @@ import shake1Url from "../assets/sounds/dice-shake-1.mp3";
 import shake2Url from "../assets/sounds/dice-shake-2.mp3";
 import shake3Url from "../assets/sounds/dice-shake-3.mp3";
 import dieLandUrl from "../assets/sounds/die-land.mp3";
+import notCountedUrl from "../assets/sounds/not-counted.mp3";
 import stampUrl from "../assets/sounds/stamp.mp3";
 import typingUrl from "../assets/sounds/typing.mp3";
-import notCountedUrl from "../assets/sounds/not-counted.mp3";
 import musicUrl from "../assets/sounds/vibing-over-venus.mp3";
 
 /** Every sound effect the game plays. Sources and licences are in CREDITS.md. */

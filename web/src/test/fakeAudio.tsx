@@ -28,6 +28,7 @@ export function fakeAudio() {
         looping.splice(looping.indexOf(name), 1);
       };
     },
+    setSuspended: vi.fn(),
   };
   const music = { setPlaying: vi.fn() } satisfies MusicPlayer;
   const Wrapper = ({ children }: { children: ReactNode }) => (

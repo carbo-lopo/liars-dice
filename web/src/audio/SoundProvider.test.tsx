@@ -71,6 +71,21 @@ describe("SoundProvider", () => {
     expect(music.setPlaying).toHaveBeenLastCalledWith(true);
   });
 
+  it("unlocks when a touch ends, as touch devices only count that as a gesture", () => {
+    const { player, music } = renderButtons();
+    fireEvent.pointerUp(screen.getByText("Rules"));
+    expect(player.unlock).toHaveBeenCalled();
+    expect(music.setPlaying).toHaveBeenLastCalledWith(true);
+  });
+
+  it("asks the music to start on every press, so a start the browser refused is tried again", () => {
+    const { music } = renderButtons();
+    fireEvent.pointerDown(screen.getByText("Rules"));
+    const starts = music.setPlaying.mock.calls.filter(([playing]) => playing).length;
+    fireEvent.pointerDown(screen.getByText("Rules"));
+    expect(music.setPlaying.mock.calls.filter(([playing]) => playing).length).toBeGreaterThan(starts);
+  });
+
   it("unlocks from the keyboard too", () => {
     const { player } = renderButtons();
     fireEvent.keyDown(window, { key: "Enter" });
@@ -92,6 +107,28 @@ describe("SoundProvider", () => {
       document.dispatchEvent(new Event("visibilitychange"));
     });
     expect(music.setPlaying).toHaveBeenLastCalledWith(false);
+  });
+
+  it("holds the effects while the page is hidden", () => {
+    const { played, player, Wrapper } = fakeAudio();
+    const { result } = renderHook(() => useSound(), { wrapper: Wrapper });
+    const setVisibility = (state: "hidden" | "visible") => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: state });
+      act(() => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+    };
+
+    setVisibility("hidden");
+    expect(player.setSuspended).toHaveBeenLastCalledWith(true);
+    act(() => result.current.playSound("stamp"));
+    act(() => result.current.playShake());
+    expect(played).toEqual([]);
+
+    setVisibility("visible");
+    expect(player.setSuspended).toHaveBeenLastCalledWith(false);
+    act(() => result.current.playSound("stamp"));
+    expect(played).toEqual(["stamp"]);
   });
 
   it("stops the music when it goes away", () => {
