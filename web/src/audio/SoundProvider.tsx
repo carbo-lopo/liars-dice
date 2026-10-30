@@ -32,8 +32,7 @@ export function useSound(): SoundApi {
  * Plays the game's sounds according to the player's settings. Audio starts
  * with the first pointer or key press, as browsers require. Every button press
  * clicks: buttons marked `data-sound="strong"` play the stronger click, and
- * `data-sound="none"` stays quiet. Music plays while it is on and the page is
- * visible.
+ * `data-sound="none"` stays quiet. Nothing plays while the page is hidden.
  */
 export function SoundProvider({
   children,

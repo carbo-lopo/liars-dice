@@ -51,7 +51,8 @@ export function createWebAudioPlayer(): SoundPlayer {
     unlock() {
       if (!supported) return;
       context ??= new AudioContext();
-      if (context.state === "suspended" && !suspended) void context.resume();
+      // iOS Safari can also leave it "interrupted", e.g. after a phone call.
+      if (context.state !== "running" && !suspended) void context.resume();
       for (const name of Object.keys(SOUND_URLS) as SoundName[]) void load(context, name);
     },
     play(name, semitones = 0) {
