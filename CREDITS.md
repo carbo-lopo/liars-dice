@@ -20,7 +20,7 @@ The same credit is shown under the Music switch on the game's Options screen.
 | `die-land.mp3` | `dice-throw-1.ogg` | [Casino Audio](https://kenney.nl/assets/casino-audio) by Kenney | CC0 1.0 |
 | `stamp.mp3` | `traditional-stamp` (44189) | freesound_community on [Pixabay](https://pixabay.com/) | [Pixabay Content License](https://pixabay.com/service/license-summary/) |
 | `typing.mp3` | `fast-typing-1` (393910) | DRAGON-STUDIO on [Pixabay](https://pixabay.com/) | [Pixabay Content License](https://pixabay.com/service/license-summary/) |
-| `bid-true.mp3` | `badge-coin-win` (14675) | freesound_community on [Pixabay](https://pixabay.com/) | [Pixabay Content License](https://pixabay.com/service/license-summary/) |
+| `bid-true.mp3` | `question_002.ogg` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) by Kenney | CC0 1.0 |
 | `bid-false.mp3` | `lose-sound` (619417) | u_lao9czi52e on [Pixabay](https://pixabay.com/) | [Pixabay Content License](https://pixabay.com/service/license-summary/) |
 
 Kenney's assets are public domain (CC0); credit isn't required but is given
@@ -40,6 +40,7 @@ tools/process-sounds.sh <folder with the originals> web/src/assets/sounds
 
 The script expects the Kenney files under their original names, and the
 others renamed: the stamp to `stamp.mp3`, the typing to `typing.mp3`, the
-coin win to `coin-win.mp3`, the lose sound to `lose.mp3`, and the music to
+lose sound to `lose.mp3`, and the music to
 `vibing-over-venus.mp3`. Some effects use only part of their original (the
-typing loop, and the coin win without its silent tail); the script says which.
+typing loop), and some are filtered (the counted chime's overtones are
+softened); the script says which.
