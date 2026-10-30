@@ -98,7 +98,7 @@ export function MainScreen({
 
   const header = phone ? (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 20, color: "var(--text-primary)" }}>
+      <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, color: "var(--text-primary)" }}>
         Liar&rsquo;s Dice
       </span>
       {roundPill}
@@ -172,7 +172,7 @@ export function MainScreen({
     <div
       style={
         phone
-          ? { display: "grid", gridTemplateColumns: `repeat(${opponents.length}, minmax(0, 1fr))`, gap: 10 }
+          ? { display: "grid", gridTemplateColumns: `repeat(${opponents.length}, minmax(0, 1fr))`, gap: 8 }
           : { display: "flex", gap: 16 }
       }
     >
@@ -210,8 +210,8 @@ export function MainScreen({
       onesWild={!view.isPalifico}
       rolling={rolling}
       onRolled={onRolled}
-      // Five dice this size fit across the narrowest common phones (320 px).
-      size={phone ? 50 : undefined}
+      // Five dice this size fit across the narrowest common phones (320 px), and keep the dock short.
+      size={phone ? 44 : undefined}
     />
   );
 
@@ -255,7 +255,7 @@ export function MainScreen({
           <>
             {bidCard}
             {/* The round's bids fill whatever height the phone has between the bid and the dock. */}
-            <div style={{ flex: 1, minHeight: 72, display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: 1, minHeight: 64, display: "flex", flexDirection: "column" }}>
               <BidHistoryCard history={shownHistory} />
             </div>
             {/* Sticks to the bottom of the screen, so the bid controls stay in reach on a phone too short for the whole table. */}
@@ -266,13 +266,13 @@ export function MainScreen({
                 bottom: 0,
                 zIndex: 2,
                 margin: `0 -${PHONE_FELT_PADDING}px -${PHONE_FELT_PADDING}px`,
-                padding: `14px ${PHONE_FELT_PADDING}px 24px`,
+                padding: `10px ${PHONE_FELT_PADDING}px 14px`,
                 background: "rgba(13, 36, 27, 0.97)",
                 borderTop: "1px solid rgba(233, 217, 184, 0.18)",
-                borderRadius: "18px 18px 0 0",
+                borderRadius: "16px 16px 0 0",
                 display: "flex",
                 flexDirection: "column",
-                gap: 12,
+                gap: 10,
               }}
             >
               {/* In the dock, where it can't scroll out of sight behind it. */}

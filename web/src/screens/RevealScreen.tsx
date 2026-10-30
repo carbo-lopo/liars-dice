@@ -132,7 +132,7 @@ export function RevealScreen({
         textAlign: phone ? "left" : "center",
         fontFamily: "var(--font-display)",
         fontWeight: 700,
-        fontSize: phone ? 17 : 20,
+        fontSize: phone ? 16 : 20,
         lineHeight: phone ? 1.35 : undefined,
         color: "var(--text-primary)",
       }}
@@ -160,8 +160,8 @@ export function RevealScreen({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: phone ? 10 : 16,
-          padding: phone ? "10px 12px" : "12px 16px",
+          gap: phone ? 8 : 16,
+          padding: phone ? "8px 10px" : "12px 16px",
           borderRadius: 10,
           background: losing
             ? "rgba(154, 58, 44, 0.35)"
@@ -171,9 +171,15 @@ export function RevealScreen({
           border: `1px solid ${losing ? "#c4513f" : row.inProgress ? "rgba(201, 162, 39, 0.6)" : "rgba(233, 217, 184, 0.15)"}`,
         }}
       >
-        <span style={{ width: phone ? 46 : 64, fontSize: phone ? 14 : 15, fontWeight: 600, color: "var(--text-primary)" }}>
-          {row.player.name}
-        </span>
+        {phone ? (
+          // The note sits under the name, leaving the rest of the row for all five dice on one line.
+          <div style={{ width: 70, flexShrink: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{row.player.name}</span>
+            <span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap", minHeight: 15 }}>{note}</span>
+          </div>
+        ) : (
+          <span style={{ width: 64, fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>{row.player.name}</span>
+        )}
         <div style={{ display: "flex", gap: phone ? 5 : 8, flex: 1, flexWrap: "wrap" }}>
           {row.dice.map((face, i) => {
             if (i >= row.shown) return <Die key={i} faceDown size={dieSize} />;
@@ -191,15 +197,9 @@ export function RevealScreen({
             );
           })}
         </div>
-        <span
-          style={
-            phone
-              ? { textAlign: "right", fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap" }
-              : { width: 90, textAlign: "right", fontSize: 13, color: "var(--text-secondary)" }
-          }
-        >
-          {note}
-        </span>
+        {!phone && (
+          <span style={{ width: 90, textAlign: "right", fontSize: 13, color: "var(--text-secondary)" }}>{note}</span>
+        )}
       </div>
     );
   });
@@ -212,8 +212,8 @@ export function RevealScreen({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: phone ? 8 : 12,
-        padding: phone ? "14px 16px" : 22,
+        gap: phone ? 6 : 12,
+        padding: phone ? "12px 14px" : 22,
         borderRadius: 12,
         background: "rgba(0, 0, 0, 0.28)",
         border: "1px solid var(--panel-border)",
@@ -227,7 +227,7 @@ export function RevealScreen({
         style={{
           fontFamily: "var(--font-display)",
           fontWeight: 700,
-          fontSize: phone ? 72 : 96,
+          fontSize: phone ? 60 : 96,
           lineHeight: 1,
           color: metClaim ? "var(--gold-strong)" : "var(--text-primary)",
         }}

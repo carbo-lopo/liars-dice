@@ -123,7 +123,7 @@ export function ActionBar({
         style={{
           fontFamily: "var(--font-display)",
           fontWeight: 700,
-          fontSize: compact ? 22 : 16,
+          fontSize: compact ? 20 : 16,
           color: "var(--text-primary)",
           minWidth: compact ? 36 : 20,
           textAlign: "center",
@@ -171,9 +171,9 @@ export function ActionBar({
             aria-pressed={isSelected}
             style={{
               width: compact ? undefined : 32,
-              height: compact ? 48 : 32,
+              height: compact ? 42 : 32,
               borderRadius: compact ? 9 : 7,
-              padding: compact ? "8px 9px" : 5,
+              padding: compact ? "7px 8px" : 5,
               cursor: raiseDisabled || !available ? "default" : "pointer",
               background: isSelected ? "var(--parchment)" : "var(--panel-bg)",
               border: isSelected ? "2px solid var(--gold)" : "1px solid var(--panel-border)",
@@ -211,7 +211,7 @@ export function ActionBar({
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: compact ? 12 : 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: compact ? 10 : 8 }}>
       {showAceNote && currentBid && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: compact ? "wrap" : undefined }}>
           <span
@@ -286,15 +286,15 @@ const stepperButtonStyle: CSSProperties = {
 
 const compactStepperButtonStyle: CSSProperties = {
   ...stepperButtonStyle,
-  width: 44,
-  height: 44,
+  width: 40,
+  height: 40,
   borderRadius: 9,
   border: "none",
   background: "rgba(0,0,0,0.3)",
   fontSize: 20,
 };
 
-const compactActionStyle: CSSProperties = { minHeight: 54, borderRadius: 12, fontSize: 17, padding: "12px 8px" };
+const compactActionStyle: CSSProperties = { minHeight: 48, borderRadius: 12, fontSize: 16, padding: "10px 8px" };
 
 function primaryButtonStyle(disabled: boolean): CSSProperties {
   return {

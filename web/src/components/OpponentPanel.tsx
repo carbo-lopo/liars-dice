@@ -34,19 +34,19 @@ export function OpponentPanel({
           // A heavier ring for the bidder, drawn inside so the panel's contents don't shift as the bid moves around.
           boxShadow: isCurrentBidder ? "inset 0 0 0 1px var(--gold)" : undefined,
           borderRadius: 10,
-          padding: "8px 10px 10px",
+          padding: "6px 8px 8px",
           display: "flex",
           flexDirection: "column",
-          gap: 6,
+          gap: 5,
           opacity: eliminated ? 0.45 : 1,
           transition: "border-color 0.2s ease",
         }}
       >
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: "var(--text-primary)" }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>
             {name}
           </span>
-          <span style={{ fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{diceLabel}</span>
+          <span style={{ fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{diceLabel}</span>
         </div>
         {personality && (
           <span
@@ -61,8 +61,8 @@ export function OpponentPanel({
             {personality}
           </span>
         )}
-        <div style={{ display: "flex", gap: 4, minHeight: 20 }}>
-          {!eliminated && Array.from({ length: diceCount }).map((_, i) => <Die key={i} faceDown size={20} decorative />)}
+        <div style={{ display: "flex", gap: 3, minHeight: 16 }}>
+          {!eliminated && Array.from({ length: diceCount }).map((_, i) => <Die key={i} faceDown size={16} decorative />)}
         </div>
       </div>
     );

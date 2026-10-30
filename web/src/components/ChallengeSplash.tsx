@@ -114,7 +114,7 @@ export function ChallengeSplash({
         </p>
       </div>
       {/* Where Continue sits on the table underneath, so the eye finds it in the same place. */}
-      <div style={phone ? { position: "absolute", left: 16, right: 16, bottom: 24 } : { position: "absolute", right: 26, bottom: 26 }}>
+      <div style={phone ? { position: "absolute", left: 12, right: 12, bottom: 14 } : { position: "absolute", right: 26, bottom: 26 }}>
         <ContinueButton ref={continueRef} onContinue={onContinue} block={phone} />
       </div>
     </div>
