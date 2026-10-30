@@ -31,6 +31,8 @@ export interface ActionBarProps {
   onPlaceBid: (bid: Bid) => void;
   onCall: () => void;
   onFaceChange?: (face: Face) => void;
+  /** The phone layout: larger controls, stacked to fill the width. */
+  compact?: boolean;
 }
 
 export function ActionBar({
@@ -40,6 +42,7 @@ export function ActionBar({
   onPlaceBid,
   onCall,
   onFaceChange,
+  compact = false,
 }: ActionBarProps) {
   const { currentBid } = rules;
   const lockedFace = lockedFaceOf(rules);
@@ -86,10 +89,131 @@ export function ActionBar({
     canRaise && !!currentBid && !rules.isPalifico && (selectedFace === 1) !== (currentBid.face === 1);
   const aceNoteDetail = currentBid && selectedFace === 1 ? "halved, rounded up" : "doubled, plus one";
 
+  const stepButton = compact ? compactStepperButtonStyle : stepperButtonStyle;
+  const stepper = (
+    <div
+      role="group"
+      aria-label={`Quantity, ${minQty} to ${maxQty}`}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        background: "var(--panel-bg)",
+        border: "2px solid var(--gold)",
+        borderRadius: compact ? 12 : 8,
+        padding: compact ? 3 : "9px 10px",
+      }}
+    >
+      <button
+        type="button"
+        disabled={raiseDisabled || quantity <= minQty}
+        onClick={() => setQuantity((q) => Math.max(minQty, q - 1))}
+        aria-label="Decrease quantity"
+        style={stepButton}
+      >
+        &minus;
+      </button>
+      {!compact && (
+        <span aria-hidden style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          Qty
+        </span>
+      )}
+      <span
+        aria-live="polite"
+        style={{
+          fontFamily: "var(--font-display)",
+          fontWeight: 700,
+          fontSize: compact ? 22 : 16,
+          color: "var(--text-primary)",
+          minWidth: compact ? 36 : 20,
+          textAlign: "center",
+        }}
+      >
+        {quantity}
+      </span>
+      <button
+        type="button"
+        disabled={raiseDisabled || quantity >= maxQty}
+        onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
+        aria-label="Increase quantity"
+        style={stepButton}
+      >
+        &#43;
+      </button>
+    </div>
+  );
+  const range = (
+    <span aria-hidden style={{ fontSize: compact ? 13 : 10, color: compact ? "var(--gold-strong)" : "var(--gold)", textAlign: "center" }}>
+      min. {minQty} · max {maxQty}
+    </span>
+  );
+  const faces = (
+    <div
+      role="group"
+      aria-label="Face"
+      style={
+        compact
+          ? { display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 8 }
+          : { display: "flex", gap: 6 }
+      }
+    >
+      {ALL_FACES.map((face) => {
+        const available = legalFaces.includes(face);
+        const isSelected = face === selectedFace;
+        return (
+          <button
+            key={face}
+            type="button"
+            disabled={raiseDisabled || !available}
+            onClick={() => handleFaceClick(face)}
+            title={faceName(face)}
+            aria-label={faceName(face)}
+            aria-pressed={isSelected}
+            style={{
+              width: compact ? undefined : 32,
+              height: compact ? 48 : 32,
+              borderRadius: compact ? 9 : 7,
+              padding: compact ? "8px 9px" : 5,
+              cursor: raiseDisabled || !available ? "default" : "pointer",
+              background: isSelected ? "var(--parchment)" : "var(--panel-bg)",
+              border: isSelected ? "2px solid var(--gold)" : "1px solid var(--panel-border)",
+              color: isSelected ? "var(--ink)" : "var(--text-secondary)",
+              opacity: available ? 1 : 0.35,
+            }}
+          >
+            <Pips face={face} pipSize={compact ? 6 : 5} color="currentColor" />
+          </button>
+        );
+      })}
+    </div>
+  );
+  const placeBid = (
+    <button
+      type="button"
+      data-sound="strong"
+      disabled={raiseDisabled}
+      onClick={() => onPlaceBid({ quantity, face: selectedFace })}
+      style={{ ...primaryButtonStyle(raiseDisabled), ...(compact && compactActionStyle) }}
+    >
+      Place Bid
+    </button>
+  );
+  const callLiar = (
+    <button
+      type="button"
+      data-sound="strong"
+      disabled={disabled || !canCall}
+      onClick={onCall}
+      style={{ ...dangerButtonStyle(disabled || !canCall), ...(compact && compactActionStyle) }}
+    >
+      Call Liar!
+    </button>
+  );
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: compact ? 12 : 8 }}>
       {showAceNote && currentBid && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: compact ? "wrap" : undefined }}>
           <span
             style={{
               background: "rgba(0,0,0,0.28)",
@@ -117,113 +241,30 @@ export function ActionBar({
         </span>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <div
-            role="group"
-            aria-label={`Quantity, ${minQty} to ${maxQty}`}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "var(--panel-bg)",
-              border: "2px solid var(--gold)",
-              borderRadius: 8,
-              padding: "9px 10px",
-            }}
-          >
-            <button
-              type="button"
-              disabled={raiseDisabled || quantity <= minQty}
-              onClick={() => setQuantity((q) => Math.max(minQty, q - 1))}
-              aria-label="Decrease quantity"
-              style={stepperButtonStyle}
-            >
-              &minus;
-            </button>
-            <span aria-hidden style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              Qty
-            </span>
-            <span
-              aria-live="polite"
-              style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 700,
-                fontSize: 16,
-                color: "var(--text-primary)",
-                minWidth: 20,
-                textAlign: "center",
-              }}
-            >
-              {quantity}
-            </span>
-            <button
-              type="button"
-              disabled={raiseDisabled || quantity >= maxQty}
-              onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
-              aria-label="Increase quantity"
-              style={stepperButtonStyle}
-            >
-              &#43;
-            </button>
+      {compact ? (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {stepper}
+            {range}
           </div>
-          <span aria-hidden style={{ fontSize: 10, color: "var(--gold)", textAlign: "center" }}>
-            min. {minQty} · max {maxQty}
-          </span>
+          {faces}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+            {placeBid}
+            {callLiar}
+          </div>
+        </>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {stepper}
+            {range}
+          </div>
+          {faces}
+          <span style={{ flex: 1 }} />
+          {placeBid}
+          {callLiar}
         </div>
-
-        <div role="group" aria-label="Face" style={{ display: "flex", gap: 6 }}>
-          {ALL_FACES.map((face) => {
-            const available = legalFaces.includes(face);
-            const isSelected = face === selectedFace;
-            return (
-              <button
-                key={face}
-                type="button"
-                disabled={raiseDisabled || !available}
-                onClick={() => handleFaceClick(face)}
-                title={faceName(face)}
-                aria-label={faceName(face)}
-                aria-pressed={isSelected}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 7,
-                  padding: 5,
-                  cursor: raiseDisabled || !available ? "default" : "pointer",
-                  background: isSelected ? "var(--parchment)" : "var(--panel-bg)",
-                  border: isSelected ? "2px solid var(--gold)" : "1px solid var(--panel-border)",
-                  color: isSelected ? "var(--ink)" : "var(--text-secondary)",
-                  opacity: available ? 1 : 0.35,
-                }}
-              >
-                <Pips face={face} pipSize={5} color="currentColor" />
-              </button>
-            );
-          })}
-        </div>
-
-        <span style={{ flex: 1 }} />
-
-        <button
-          type="button"
-          data-sound="strong"
-          disabled={raiseDisabled}
-          onClick={() => onPlaceBid({ quantity, face: selectedFace })}
-          style={primaryButtonStyle(raiseDisabled)}
-        >
-          Place Bid
-        </button>
-        <button
-          type="button"
-          data-sound="strong"
-          disabled={disabled || !canCall}
-          onClick={onCall}
-          style={dangerButtonStyle(disabled || !canCall)}
-        >
-          Call Liar!
-        </button>
-      </div>
+      )}
     </div>
   );
 }
@@ -242,6 +283,18 @@ const stepperButtonStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
 };
+
+const compactStepperButtonStyle: CSSProperties = {
+  ...stepperButtonStyle,
+  width: 44,
+  height: 40,
+  borderRadius: 9,
+  border: "none",
+  background: "rgba(0,0,0,0.3)",
+  fontSize: 20,
+};
+
+const compactActionStyle: CSSProperties = { minHeight: 54, borderRadius: 12, fontSize: 17, padding: "12px 8px" };
 
 function primaryButtonStyle(disabled: boolean): CSSProperties {
   return {

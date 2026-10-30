@@ -12,6 +12,7 @@ import {
   VERDICT_MS,
 } from "../hooks/useRevealSequence";
 import { preferReducedMotion } from "../test/motion";
+import { stubPhoneScreen } from "../test/phone";
 import { StrictWrapper } from "../test/strictMode";
 import { countedSemitones } from "../audio/sounds";
 import { fakeAudio } from "../test/fakeAudio";
@@ -208,6 +209,20 @@ describe("RevealScreen", () => {
     expect(screen.getAllByText(/The bid held\. Duke loses a die\./).length).toBeGreaterThan(0);
     expect(screen.getByText("− 1 die")).toBeTruthy();
 
+    act(() => continueButton().click());
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("on a phone, puts the header buttons in a Menu and still ends with the verdict and Continue", () => {
+    stubPhoneScreen();
+    const { onContinue } = renderReveal();
+    expect(screen.queryByRole("button", { name: "Quit Game" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Menu" })).toBeTruthy();
+    expect(continueButton()).toHaveProperty("disabled", true);
+
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS));
+    expect(count()).toBe("5");
+    expect(screen.getAllByText(/The bid held\. Duke loses a die\./).length).toBeGreaterThan(0);
     act(() => continueButton().click());
     expect(onContinue).toHaveBeenCalledTimes(1);
   });

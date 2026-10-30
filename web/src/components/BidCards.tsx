@@ -15,6 +15,8 @@ export interface CurrentBidCardProps {
   onTyped?: () => void;
   /** A short status line across the top of the card, e.g. who is thinking. */
   status?: string | null;
+  /** The shorter phone layout, sized to its content rather than filling a row. */
+  compact?: boolean;
 }
 
 function nextMoveHint(hasBid: boolean, actorName: string): string {
@@ -30,6 +32,7 @@ export function CurrentBidCard({
   typing = false,
   onTyped,
   status = null,
+  compact = false,
 }: CurrentBidCardProps) {
   const label = bid ? bidLabel(bid.quantity, bid.face) : "";
   const shownLabel = useTypewriter(label, typing && bid !== null, () => onTyped?.());
@@ -49,12 +52,12 @@ export function CurrentBidCard({
     <div
       style={{
         position: "relative",
-        flex: 1.3,
+        flex: compact ? "none" : 1.3,
         minWidth: 0,
         background: "var(--parchment)",
-        border: "6px solid var(--parchment-border)",
+        border: `${compact ? 5 : 6}px solid var(--parchment-border)`,
         borderRadius: 6,
-        padding: "18px 22px",
+        padding: compact ? "26px 16px 12px" : "18px 22px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
@@ -66,10 +69,10 @@ export function CurrentBidCard({
         role="status"
         style={{
           position: "absolute",
-          top: 14,
-          left: 22,
-          right: 22,
-          fontSize: 13,
+          top: compact ? 8 : 14,
+          left: compact ? 16 : 22,
+          right: compact ? 16 : 22,
+          fontSize: compact ? 12 : 13,
           fontStyle: "italic",
           color: "#7A6A4E",
         }}
@@ -85,7 +88,7 @@ export function CurrentBidCard({
       {bid ? (
         <span
           aria-hidden={typing}
-          style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 38, color: "var(--ink)" }}
+          style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: compact ? 32 : 38, color: "var(--ink)" }}
         >
           {shownLabel}
           {typing && <span className="typing-caret">|</span>}

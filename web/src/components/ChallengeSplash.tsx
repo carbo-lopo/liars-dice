@@ -4,6 +4,7 @@ import { bidLabel } from "../lib/faceNames.js";
 import { conjugate, possessive } from "../lib/grammar.js";
 import { useSound } from "../audio/SoundProvider.js";
 import { prefersReducedMotion } from "../lib/motion.js";
+import { usePhoneLayout } from "../hooks/usePhoneLayout.js";
 import { ContinueButton } from "./ContinueButton.js";
 
 /**
@@ -51,6 +52,7 @@ export function ChallengeSplash({
     if (!covered) continueRef.current?.focus();
   }, [covered]);
 
+  const phone = usePhoneLayout();
   const { challenger, bidder, bid } = resolution;
   const caller = `${challenger.name} ${conjugate(challenger.isHuman, "call")}`;
   const whose = possessive(bidder.isHuman, bidder.name);
@@ -69,14 +71,14 @@ export function ChallengeSplash({
         zIndex: 10,
       }}
     >
-      <div role="alert" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 72 }}>
+      <div role="alert" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: phone ? 44 : 72 }}>
         <div
           className="challenge-stamp"
           style={{
             transform: "rotate(-8deg)",
-            border: "8px solid #c4513f",
-            borderRadius: 14,
-            padding: "14px 54px",
+            border: `${phone ? 6 : 8}px solid #c4513f`,
+            borderRadius: phone ? 10 : 14,
+            padding: phone ? "10px 28px" : "14px 54px",
             background: "rgba(243, 233, 210, 0.96)",
             boxShadow: "0 18px 50px rgba(0, 0, 0, 0.55)",
           }}
@@ -85,7 +87,7 @@ export function ChallengeSplash({
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 700,
-              fontSize: 132,
+              fontSize: phone ? 84 : 132,
               letterSpacing: "0.04em",
               color: "var(--danger-strong)",
               lineHeight: 1,
@@ -99,7 +101,8 @@ export function ChallengeSplash({
             margin: 0,
             padding: "0 24px",
             fontFamily: "var(--font-display)",
-            fontSize: 24,
+            fontSize: phone ? 21 : 24,
+            lineHeight: phone ? 1.4 : undefined,
             color: "var(--text-primary)",
             textAlign: "center",
           }}
@@ -109,8 +112,8 @@ export function ChallengeSplash({
         </p>
       </div>
       {/* Where Continue sits on the table underneath, so the eye finds it in the same place. */}
-      <div style={{ position: "absolute", right: 26, bottom: 26 }}>
-        <ContinueButton ref={continueRef} onContinue={onContinue} />
+      <div style={phone ? { position: "absolute", left: 16, right: 16, bottom: 24 } : { position: "absolute", right: 26, bottom: 26 }}>
+        <ContinueButton ref={continueRef} onContinue={onContinue} block={phone} />
       </div>
     </div>
   );
