@@ -1,4 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
+import type { ComponentType, ReactNode } from "react";
 import { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import { Player } from "@engine/models/player.js";
 import type { BotStrategy } from "@engine/types/botStrategy.js";
@@ -19,9 +20,10 @@ import { RevealScreen } from "./RevealScreen";
 const bot: BotStrategy = { id: "idle", label: "Idle", decide: () => ({ type: "call" }) };
 
 /**
- * Cora bid 4 × Fives and Duke called. Hands are listed in turn order (Duke
- * first), and 5 Fives count with wild Aces, so the bid held and Duke loses a
- * die. Duke still has dice left after losing one.
+ * Cora bid `quantity` × Fives (4 by default) and Duke called. Hands are listed
+ * in turn order (Duke first), and 5 Fives count with wild Aces, so a bid of up
+ * to 5 held and Duke loses a die; above that it was a bluff and Cora loses one.
+ * Either way the loser still has dice left.
  */
 function coraCalledByDuke({ quantity = 4 } = {}): ChallengeResolution {
   const duke = new Player("Duke", [3, 1, 4, 6], bot);
@@ -53,12 +55,17 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function renderReveal({ fastForward = false, covered = false } = {}) {
+function renderReveal({
+  fastForward = false,
+  covered = false,
+  quantity = 4,
+  wrapper = StrictWrapper,
+}: { fastForward?: boolean; covered?: boolean; quantity?: number; wrapper?: ComponentType<{ children: ReactNode }> } = {}) {
   const onContinue = vi.fn();
   const onToggleFastForward = vi.fn();
   const element = (on: boolean, isCovered = covered) => (
     <RevealScreen
-      resolution={coraCalledByDuke()}
+      resolution={coraCalledByDuke({ quantity })}
       onContinue={onContinue}
       onQuit={() => {}}
       onRules={() => {}}
@@ -68,7 +75,7 @@ function renderReveal({ fastForward = false, covered = false } = {}) {
       covered={isCovered}
     />
   );
-  const view = render(element(fastForward), { wrapper: StrictWrapper });
+  const view = render(element(fastForward), { wrapper });
   return {
     onContinue,
     onToggleFastForward,
@@ -207,19 +214,7 @@ describe("RevealScreen", () => {
 
   it("chimes for each die that counts, rising in pitch, and plays the other sound for the rest", () => {
     const { played, semitones, Wrapper } = fakeAudio();
-    render(
-      <RevealScreen
-        resolution={coraCalledByDuke()}
-        onContinue={() => {}}
-        onQuit={() => {}}
-        onRules={() => {}}
-        onOptions={() => {}}
-        fastForward={false}
-        onToggleFastForward={() => {}}
-        covered={false}
-      />,
-      { wrapper: Wrapper },
-    );
+    renderReveal({ wrapper: Wrapper });
     act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS));
     expect(played).toEqual(["counted"]); // Cora's first die is a Five
     act(() => vi.advanceTimersByTime(REVEAL_GAP_MS));
@@ -234,19 +229,7 @@ describe("RevealScreen", () => {
 
   it("plays the win sound once as the verdict shows a bid that held", () => {
     const { played, Wrapper } = fakeAudio();
-    render(
-      <RevealScreen
-        resolution={coraCalledByDuke()}
-        onContinue={() => {}}
-        onQuit={() => {}}
-        onRules={() => {}}
-        onOptions={() => {}}
-        fastForward={false}
-        onToggleFastForward={() => {}}
-        covered={false}
-      />,
-      { wrapper: Wrapper },
-    );
+    renderReveal({ wrapper: Wrapper });
     act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS - 1));
     expect(played).not.toContain("bidTrue");
     act(() => vi.advanceTimersByTime(60_000));
@@ -256,19 +239,7 @@ describe("RevealScreen", () => {
 
   it("plays the lose sound for a bluff", () => {
     const { played, Wrapper } = fakeAudio();
-    render(
-      <RevealScreen
-        resolution={coraCalledByDuke({ quantity: 6 })}
-        onContinue={() => {}}
-        onQuit={() => {}}
-        onRules={() => {}}
-        onOptions={() => {}}
-        fastForward={false}
-        onToggleFastForward={() => {}}
-        covered={false}
-      />,
-      { wrapper: Wrapper },
-    );
+    renderReveal({ wrapper: Wrapper, quantity: 6 });
     act(() => vi.advanceTimersByTime(60_000));
     expect(played.filter((name) => name === "bidTrue" || name === "bidFalse")).toEqual(["bidFalse"]);
   });
@@ -276,19 +247,7 @@ describe("RevealScreen", () => {
   it("plays only the verdict when the reveal is shown at once for reduced motion", () => {
     preferReducedMotion();
     const { played, Wrapper } = fakeAudio();
-    render(
-      <RevealScreen
-        resolution={coraCalledByDuke()}
-        onContinue={() => {}}
-        onQuit={() => {}}
-        onRules={() => {}}
-        onOptions={() => {}}
-        fastForward={false}
-        onToggleFastForward={() => {}}
-        covered={false}
-      />,
-      { wrapper: Wrapper },
-    );
+    renderReveal({ wrapper: Wrapper });
     act(() => vi.advanceTimersByTime(60_000));
     expect(played).toEqual(["bidTrue"]);
   });
