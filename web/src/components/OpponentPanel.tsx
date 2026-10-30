@@ -30,7 +30,9 @@ export function OpponentPanel({
         style={{
           minWidth: 0,
           background: "var(--panel-bg)",
-          border: `${isCurrentBidder ? 2 : 1}px solid ${isCurrentBidder ? "var(--gold)" : (accent ?? "var(--panel-border)")}`,
+          border: `1px solid ${isCurrentBidder ? "var(--gold)" : (accent ?? "var(--panel-border)")}`,
+          // A heavier ring for the bidder, drawn inside so the panel's contents don't shift as the bid moves around.
+          boxShadow: isCurrentBidder ? "inset 0 0 0 1px var(--gold)" : undefined,
           borderRadius: 10,
           padding: "8px 10px 10px",
           display: "flex",
