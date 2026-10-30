@@ -17,6 +17,15 @@ const placeBid = () => screen.getByRole("button", { name: "Place Bid" });
 const callLiar = () => screen.getByRole("button", { name: "Call Liar!" });
 
 describe("ActionBar", () => {
+  it("shows each face as its pips, not a number", () => {
+    renderBar({ currentBid: null, isPalifico: false, totalDiceInPlay: 10 });
+    const names = ["Aces", "Twos", "Threes", "Fours", "Fives", "Sixes"];
+    names.forEach((name, i) => {
+      expect(face(name).textContent).toBe("");
+      expect(face(name).querySelectorAll("[data-pip]")).toHaveLength(i + 1);
+    });
+  });
+
   it("stops raising the quantity at the dice in play", () => {
     const { onPlaceBid } = renderBar({ currentBid: { quantity: 3, face: 4 }, isPalifico: false, totalDiceInPlay: 5 });
     fireEvent.click(plus());

@@ -11,6 +11,42 @@ const PIP_LAYOUTS: Record<Face, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
+/**
+ * The pips of `face`, placed on a 3×3 grid that fills its container. Only the
+ * pips the face has are drawn.
+ */
+export function Pips({ face, pipSize, color = "var(--die-pip)" }: { face: Face; pipSize: number; color?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gridTemplateRows: "repeat(3, 1fr)",
+      }}
+    >
+      {PIP_LAYOUTS[face].map((cell) => (
+        <div
+          key={cell}
+          data-pip=""
+          style={{
+            gridRow: Math.floor(cell / 3) + 1,
+            gridColumn: (cell % 3) + 1,
+            width: pipSize,
+            height: pipSize,
+            borderRadius: "50%",
+            justifySelf: "center",
+            alignSelf: "center",
+            background: color,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export interface DieProps {
   face?: Face;
   faceDown?: boolean;
@@ -62,7 +98,6 @@ export function Die({
   }
 
   const pipSize = Math.max(4, Math.round(size * 0.16));
-  const active = new Set(PIP_LAYOUTS[face]);
 
   const label = spinning
     ? "Rolling die"
@@ -85,25 +120,10 @@ export function Die({
         boxShadow: highlighted
           ? `0 0 0 3px var(--gold), 0 ${Math.round(size * 0.06)}px 0 var(--die-shadow), 0 ${Math.round(size * 0.1)}px ${Math.round(size * 0.16)}px rgba(0,0,0,0.35)`
           : `0 ${Math.round(size * 0.06)}px 0 var(--die-shadow), 0 ${Math.round(size * 0.1)}px ${Math.round(size * 0.16)}px rgba(0,0,0,0.35)`,
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gridTemplateRows: "repeat(3, 1fr)",
         padding: Math.round(size * 0.14),
       }}
     >
-      {Array.from({ length: 9 }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            width: pipSize,
-            height: pipSize,
-            borderRadius: "50%",
-            justifySelf: "center",
-            alignSelf: "center",
-            background: active.has(i) ? "var(--die-pip)" : "transparent",
-          }}
-        />
-      ))}
+      <Pips face={face} pipSize={pipSize} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { isValidRaise, type BiddingRules } from "@engine/rules/bidding.js";
 import type { Bid } from "@engine/types/bid.js";
 import type { Face } from "@engine/types/face.js";
 import { faceName } from "../lib/faceNames.js";
+import { Pips } from "./Die.js";
 
 const ALL_FACES: Face[] = [1, 2, 3, 4, 5, 6];
 
@@ -188,8 +189,7 @@ export function ActionBar({
                   width: 32,
                   height: 32,
                   borderRadius: 7,
-                  fontSize: 13,
-                  fontWeight: 700,
+                  padding: 5,
                   cursor: raiseDisabled || !available ? "default" : "pointer",
                   background: isSelected ? "var(--parchment)" : "var(--panel-bg)",
                   border: isSelected ? "2px solid var(--gold)" : "1px solid var(--panel-border)",
@@ -197,7 +197,7 @@ export function ActionBar({
                   opacity: available ? 1 : 0.35,
                 }}
               >
-                {face}
+                <Pips face={face} pipSize={5} color="currentColor" />
               </button>
             );
           })}
