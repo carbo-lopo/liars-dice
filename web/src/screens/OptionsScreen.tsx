@@ -34,9 +34,7 @@ export function OptionsScreen({ onBack }: { onBack: () => void }) {
           label="Sound effects"
           checked={settings.soundEffects}
           onChange={(soundEffects) => updateSettings({ soundEffects })}
-        >
-          Clicks, dice, the stamp and the chime for counted dice.
-        </SettingSwitch>
+        />
         <SettingSwitch label="Music" checked={settings.music} onChange={(music) => updateSettings({ music })}>
           &ldquo;Vibing Over Venus&rdquo; by Kevin MacLeod (
           <a href="https://incompetech.com" target="_blank" rel="noreferrer" style={linkStyle}>
@@ -63,7 +61,7 @@ function SettingSwitch({
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const hintId = useId();
   return (
@@ -74,14 +72,16 @@ function SettingSwitch({
           role="switch"
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
-          aria-describedby={hintId}
+          aria-describedby={children ? hintId : undefined}
           style={{ width: 20, height: 20, margin: 0, accentColor: "var(--gold)", cursor: "pointer" }}
         />
         <span style={{ fontSize: 15, color: "var(--text-primary)" }}>{label}</span>
       </label>
-      <p id={hintId} style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "var(--text-secondary)" }}>
-        {children}
-      </p>
+      {children && (
+        <p id={hintId} style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "var(--text-secondary)" }}>
+          {children}
+        </p>
+      )}
     </div>
   );
 }

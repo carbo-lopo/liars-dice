@@ -41,6 +41,11 @@ describe("OptionsScreen", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
+  it("gives the sound effects switch no description", () => {
+    renderOptions();
+    expect(screen.getByRole("switch", { name: "Sound effects" }).hasAttribute("aria-describedby")).toBe(false);
+  });
+
   it("switches sound effects and music independently, and saves both", () => {
     renderOptions();
     const effects = screen.getByRole("switch", { name: "Sound effects" });
