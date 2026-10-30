@@ -258,7 +258,6 @@ export function MainScreen({
             <div style={{ flex: 1, minHeight: 72, display: "flex", flexDirection: "column" }}>
               <BidHistoryCard history={shownHistory} />
             </div>
-            {errorNotice}
             {/* Sticks to the bottom of the screen, so the bid controls stay in reach on a phone too short for the whole table. */}
             <div
               data-testid="dock"
@@ -276,6 +275,8 @@ export function MainScreen({
                 gap: 12,
               }}
             >
+              {/* In the dock, where it can't scroll out of sight behind it. */}
+              {errorNotice}
               {hand}
               {controls}
             </div>

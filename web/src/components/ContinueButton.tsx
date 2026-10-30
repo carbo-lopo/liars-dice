@@ -38,7 +38,7 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
   const [focused, setFocused] = useState(false);
   const [heldByTouch, setHeldByTouch] = useState(false);
   const longPressTimer = useRef<number | null>(null);
-  // The release that ends a long press still sends a click; this swallows it.
+  // The release that ends a long press may still send a click; this swallows it.
   const swallowClick = useRef(false);
   const pageVisible = usePageVisible();
   const hintId = useId();
@@ -76,6 +76,13 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
     }, LONG_PRESS_MS);
   };
 
+  const endPress = () => {
+    cancelLongPress();
+    // Any click from this release arrives before the timeout runs; some browsers
+    // send none after a long press, so the flag mustn't outlive the release.
+    if (swallowClick.current) window.setTimeout(() => (swallowClick.current = false), 0);
+  };
+
   const click = () => {
     if (swallowClick.current) {
       swallowClick.current = false;
@@ -91,7 +98,7 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
         type="button"
         onClick={click}
         onPointerDown={startPress}
-        onPointerUp={cancelLongPress}
+        onPointerUp={endPress}
         onPointerCancel={cancelLongPress}
         onPointerLeave={cancelLongPress}
         // A long press would otherwise open the browser's own menu or select the label.

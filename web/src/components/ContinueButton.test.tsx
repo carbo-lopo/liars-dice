@@ -85,6 +85,16 @@ describe("ContinueButton", () => {
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
+  it("doesn't swallow a later press when the browser sends no click after a long press", () => {
+    const { onContinue, button } = renderButton();
+    press(button(), "pointerdown", "touch");
+    act(() => vi.advanceTimersByTime(LONG_PRESS_MS));
+    press(button(), "pointerup", "touch");
+    act(() => vi.advanceTimersByTime(0));
+    fireEvent.click(button()); // e.g. Enter from a keyboard, with no pointer press first
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
   it("presses at once for a quick tap", () => {
     const { onContinue, button } = renderButton();
     press(button(), "pointerdown", "touch");

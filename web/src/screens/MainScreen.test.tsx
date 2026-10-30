@@ -88,6 +88,12 @@ describe("MainScreen", () => {
     expect(history.compareDocumentPosition(hand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("shows an error inside the dock on a phone, where the dock can't cover it", () => {
+    stubPhoneScreen();
+    renderMain({ challenge: null, isYourTurn: true, error: "That bid isn't high enough." });
+    expect(screen.getByTestId("dock").contains(screen.getByRole("alert"))).toBe(true);
+  });
+
   it("keeps the separate header buttons on a wide screen", () => {
     renderMain({ challenge: null });
     expect(screen.queryByRole("button", { name: "Menu" })).toBeNull();
