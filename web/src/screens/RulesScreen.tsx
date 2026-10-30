@@ -1,5 +1,6 @@
 import type { Face } from "@engine/types/face.js";
 import { BackButton } from "../components/BackButton.js";
+import { usePhoneLayout } from "../hooks/usePhoneLayout.js";
 import { TableFrame } from "../components/TableFrame.js";
 import { Die } from "../components/Die.js";
 import { PalificoIcon } from "../components/PalificoIcon.js";
@@ -13,6 +14,7 @@ export interface RulesScreenProps {
 }
 
 export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
+  const phone = usePhoneLayout();
   return (
     <TableFrame>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -124,7 +126,7 @@ export function RulesScreen({ onBack, onPlay }: RulesScreenProps) {
 
       {onPlay && (
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button type="button" onClick={onPlay} style={primaryButtonStyle}>
+          <button type="button" onClick={onPlay} style={phone ? { ...primaryButtonStyle, minHeight: 44 } : primaryButtonStyle}>
             Start Playing
           </button>
         </div>
