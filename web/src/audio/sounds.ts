@@ -50,9 +50,9 @@ export function pickShake(last: ShakeName | null, random: () => number = Math.ra
 }
 
 /** How far, in semitones, the first counted die's chime is pitched below the recording. */
-export const COUNTED_FIRST_SEMITONES = -4;
+export const COUNTED_FIRST_SEMITONES = -8;
 /** The highest a counted die's chime goes, in semitones above the recording. */
-export const COUNTED_MAX_SEMITONES = 8;
+export const COUNTED_MAX_SEMITONES = 4;
 
 /**
  * The pitch of the chime for a reveal's `index`th counted die (from 0): each one
