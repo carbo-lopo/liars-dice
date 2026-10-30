@@ -210,7 +210,8 @@ export function MainScreen({
       onesWild={!view.isPalifico}
       rolling={rolling}
       onRolled={onRolled}
-      size={phone ? 56 : undefined}
+      // Five dice this size fit across the narrowest common phones (320 px).
+      size={phone ? 50 : undefined}
     />
   );
 

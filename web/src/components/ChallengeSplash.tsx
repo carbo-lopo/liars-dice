@@ -79,7 +79,8 @@ export function ChallengeSplash({
             transform: "rotate(-8deg)",
             border: `${phone ? 6 : 8}px solid #c4513f`,
             borderRadius: phone ? 10 : 14,
-            padding: phone ? "10px 28px" : "14px 54px",
+            // On a phone the stamp shrinks with the screen, so it fits even 320 px across.
+            padding: phone ? "10px min(28px, 6vw)" : "14px 54px",
             background: "rgba(243, 233, 210, 0.96)",
             boxShadow: "0 18px 50px rgba(0, 0, 0, 0.55)",
           }}
@@ -88,7 +89,7 @@ export function ChallengeSplash({
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 700,
-              fontSize: phone ? 84 : 132,
+              fontSize: phone ? "min(84px, 21vw)" : 132,
               letterSpacing: "0.04em",
               color: "var(--danger-strong)",
               lineHeight: 1,
@@ -109,7 +110,7 @@ export function ChallengeSplash({
           }}
         >
           {caller} Liar on {whose} bid of{" "}
-          <strong style={{ color: "var(--gold-strong)" }}>{bidLabel(bid.quantity, bid.face)}</strong>
+          <strong style={{ color: "var(--gold-strong)", whiteSpace: "nowrap" }}>{bidLabel(bid.quantity, bid.face)}</strong>
         </p>
       </div>
       {/* Where Continue sits on the table underneath, so the eye finds it in the same place. */}
