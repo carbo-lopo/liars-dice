@@ -6,6 +6,7 @@ import shake2Url from "../assets/sounds/dice-shake-2.mp3";
 import shake3Url from "../assets/sounds/dice-shake-3.mp3";
 import dieLandUrl from "../assets/sounds/die-land.mp3";
 import stampUrl from "../assets/sounds/stamp.mp3";
+import notCountedUrl from "../assets/sounds/not-counted.mp3";
 import musicUrl from "../assets/sounds/vibing-over-venus.mp3";
 
 /** Every sound effect the game plays. Sources and licences are in CREDITS.md. */
@@ -18,6 +19,8 @@ export const SOUND_URLS = {
   dieLand: dieLandUrl,
   /** A revealed die that counts toward the bid. */
   counted: countedUrl,
+  /** A revealed die that doesn't count. */
+  notCounted: notCountedUrl,
   /** The LIAR! stamp landing. */
   stamp: stampUrl,
   shake1: shake1Url,
@@ -35,6 +38,19 @@ export type ShakeName = (typeof SHAKES)[number];
 export function pickShake(last: ShakeName | null, random: () => number = Math.random): ShakeName {
   const options = SHAKES.filter((shake) => shake !== last);
   return options[Math.floor(random() * options.length)] ?? options[0]!;
+}
+
+/** How far, in semitones, the first counted die's chime is pitched below the recording. */
+export const COUNTED_FIRST_SEMITONES = -4;
+/** The highest a counted die's chime goes, in semitones above the recording. */
+export const COUNTED_MAX_SEMITONES = 8;
+
+/**
+ * The pitch of the chime for a reveal's `index`th counted die (from 0): each one
+ * a semitone above the last, up to a ceiling so a big reveal doesn't climb too far.
+ */
+export function countedSemitones(index: number): number {
+  return Math.min(COUNTED_FIRST_SEMITONES + index, COUNTED_MAX_SEMITONES);
 }
 
 export const MUSIC_URL = musicUrl;

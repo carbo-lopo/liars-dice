@@ -4,7 +4,8 @@ import { MUSIC_URL, MUSIC_VOLUME, SOUND_URLS, type SoundName } from "./sounds.js
 export interface SoundPlayer {
   /** Call from a user gesture: browsers keep audio off until the first one. */
   unlock(): void;
-  play(name: SoundName): void;
+  /** `semitones` shifts the pitch (and, with it, the speed) from the recording. */
+  play(name: SoundName, semitones?: number): void;
 }
 
 /** Plays or pauses the looping background music. */
@@ -49,13 +50,14 @@ export function createWebAudioPlayer(): SoundPlayer {
       if (context.state === "suspended") void context.resume();
       for (const name of Object.keys(SOUND_URLS) as SoundName[]) void load(context, name);
     },
-    play(name) {
+    play(name, semitones = 0) {
       const ctx = context;
       if (!ctx) return;
       void load(ctx, name).then((buffer) => {
         if (!buffer) return;
         const source = ctx.createBufferSource();
         source.buffer = buffer;
+        source.playbackRate.value = 2 ** (semitones / 12);
         source.connect(ctx.destination);
         source.start();
       });

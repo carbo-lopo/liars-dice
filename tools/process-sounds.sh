@@ -9,9 +9,10 @@ mean_db() { ffmpeg -hide_banner -i "$1" -af volumedetect -f null - 2>&1 | awk '/
 
 # source file : output name : target mean dB
 EFFECTS=(
-  "click5.ogg:click.mp3:-26"
+  "click1.ogg:click.mp3:-26"
   "click1.ogg:click-strong.mp3:-24"
   "toggle_002.ogg:counted.mp3:-24"
+  "rollover6.ogg:not-counted.mp3:-28"
   "dice-throw-1.ogg:die-land.mp3:-27"
   "dice-shake-1.ogg:dice-shake-1.mp3:-27"
   "dice-shake-2.ogg:dice-shake-2.mp3:-27"

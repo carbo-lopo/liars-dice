@@ -12,6 +12,7 @@ import {
 } from "../hooks/useRevealSequence";
 import { preferReducedMotion } from "../test/motion";
 import { StrictWrapper } from "../test/strictMode";
+import { countedSemitones } from "../audio/sounds";
 import { fakeAudio } from "../test/fakeAudio";
 import { RevealScreen } from "./RevealScreen";
 
@@ -204,8 +205,8 @@ describe("RevealScreen", () => {
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
-  it("chimes once for each die that counts, and plays nothing else", () => {
-    const { played, Wrapper } = fakeAudio();
+  it("chimes for each die that counts, rising in pitch, and plays the other sound for the rest", () => {
+    const { played, semitones, Wrapper } = fakeAudio();
     render(
       <RevealScreen
         resolution={coraCalledByDuke()}
@@ -222,10 +223,14 @@ describe("RevealScreen", () => {
     act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS));
     expect(played).toEqual(["counted"]); // Cora's first die is a Five
     act(() => vi.advanceTimersByTime(REVEAL_GAP_MS));
-    expect(played).toEqual(["counted"]); // a Two doesn't count
+    expect(played).toEqual(["counted", "notCounted"]); // a Two doesn't count
 
     act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS));
-    expect(played).toEqual(Array(5).fill("counted"));
+    const dice = coraCalledByDuke().reveal.flatMap((hand) => hand.dice).length;
+    expect(played).toHaveLength(dice);
+    expect(played.filter((name) => name === "counted")).toHaveLength(5);
+    expect(semitones.filter((_, i) => played[i] === "counted")).toEqual([0, 1, 2, 3, 4].map(countedSemitones));
+    expect(semitones.filter((_, i) => played[i] === "notCounted").every((shift) => shift === 0)).toBe(true);
   });
 
   it("is silent when the reveal is shown at once for reduced motion", () => {

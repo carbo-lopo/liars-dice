@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { SHAKES, pickShake, type ShakeName } from "./sounds";
+import { COUNTED_FIRST_SEMITONES, COUNTED_MAX_SEMITONES, SHAKES, countedSemitones, pickShake, type ShakeName } from "./sounds";
+
+describe("countedSemitones", () => {
+  it("starts below the recording and rises a semitone per counted die", () => {
+    expect([0, 1, 2].map(countedSemitones)).toEqual([
+      COUNTED_FIRST_SEMITONES,
+      COUNTED_FIRST_SEMITONES + 1,
+      COUNTED_FIRST_SEMITONES + 2,
+    ]);
+    expect(COUNTED_FIRST_SEMITONES).toBeLessThan(0);
+  });
+
+  it("stops rising at the ceiling", () => {
+    const top = COUNTED_MAX_SEMITONES - COUNTED_FIRST_SEMITONES;
+    expect(countedSemitones(top)).toBe(COUNTED_MAX_SEMITONES);
+    expect(countedSemitones(top + 20)).toBe(COUNTED_MAX_SEMITONES);
+  });
+});
 
 describe("pickShake", () => {
   it("never repeats the previous shake", () => {

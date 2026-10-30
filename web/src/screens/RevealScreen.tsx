@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import type { Face } from "@engine/types/face.js";
 import { useSound } from "../audio/SoundProvider.js";
+import { countedSemitones } from "../audio/sounds.js";
 import { ContinueButton } from "../components/ContinueButton.js";
 import { FastForwardButton } from "../components/FastForwardButton.js";
 import { Die } from "../components/Die.js";
@@ -61,15 +62,20 @@ export function RevealScreen({
     (verdictShown ? continueRef : fastForwardRef).current?.focus();
   }, [verdictShown, covered]);
 
-  // A chime for each die that turns over and counts. With reduced motion the
-  // reveal starts out complete, so nothing is newly turned and it stays quiet.
+  // A sound for each die as it turns over: a chime if it counts, rising in pitch
+  // with each counted die, and a softer sound if it doesn't. With reduced motion
+  // the reveal starts out complete, so nothing is newly turned and it stays quiet.
   const { playSound } = useSound();
   const allDice = hands.flatMap((hand) => hand.dice);
   const chimedThroughRef = useRef(revealed);
   useEffect(() => {
     // Several dice can turn in one render if their timers fire together.
     for (let die = chimedThroughRef.current; die < revealed; die++) {
-      if (countsFor(allDice[die]!)) playSound("counted");
+      if (countsFor(allDice[die]!)) {
+        playSound("counted", countedSemitones(allDice.slice(0, die).filter(countsFor).length));
+      } else {
+        playSound("notCounted");
+      }
     }
     chimedThroughRef.current = Math.max(chimedThroughRef.current, revealed);
     // eslint-disable-next-line react-hooks/exhaustive-deps

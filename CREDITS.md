@@ -12,9 +12,10 @@ The same credit is shown under the Music switch on the game's Options screen.
 
 | File in `web/src/assets/sounds/` | Original | Source | Licence |
 |---|---|---|---|
-| `click.mp3` | `click5.ogg` | [UI Audio](https://kenney.nl/assets/ui-audio) by Kenney | CC0 1.0 |
+| `click.mp3` | `click1.ogg` | [UI Audio](https://kenney.nl/assets/ui-audio) by Kenney | CC0 1.0 |
 | `click-strong.mp3` | `click1.ogg` | [UI Audio](https://kenney.nl/assets/ui-audio) by Kenney | CC0 1.0 |
 | `counted.mp3` | `toggle_002.ogg` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) by Kenney | CC0 1.0 |
+| `not-counted.mp3` | `rollover6.ogg` | [UI Audio](https://kenney.nl/assets/ui-audio) by Kenney | CC0 1.0 |
 | `dice-shake-1.mp3`, `dice-shake-2.mp3`, `dice-shake-3.mp3` | `dice-shake-1.ogg` to `dice-shake-3.ogg` | [Casino Audio](https://kenney.nl/assets/casino-audio) by Kenney | CC0 1.0 |
 | `die-land.mp3` | `dice-throw-1.ogg` | [Casino Audio](https://kenney.nl/assets/casino-audio) by Kenney | CC0 1.0 |
 | `stamp.mp3` | `traditional-stamp` (44189) | freesound_community on [Pixabay](https://pixabay.com/) | [Pixabay Content License](https://pixabay.com/service/license-summary/) |

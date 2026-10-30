@@ -9,7 +9,15 @@ import { StrictWrapper } from "./strictMode";
 /** A sound player that records what it was asked to play, instead of making noise. */
 export function fakeAudio() {
   const played: SoundName[] = [];
-  const player: SoundPlayer = { unlock: vi.fn(), play: (name) => played.push(name) };
+  /** The pitch shift asked for with each entry in `played` (0 when none was given). */
+  const semitones: number[] = [];
+  const player: SoundPlayer = {
+    unlock: vi.fn(),
+    play: (name, shift = 0) => {
+      played.push(name);
+      semitones.push(shift);
+    },
+  };
   const music = { setPlaying: vi.fn() } satisfies MusicPlayer;
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <StrictWrapper>
@@ -20,5 +28,5 @@ export function fakeAudio() {
       </SettingsProvider>
     </StrictWrapper>
   );
-  return { played, player, music, Wrapper };
+  return { played, semitones, player, music, Wrapper };
 }

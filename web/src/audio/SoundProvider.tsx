@@ -6,8 +6,8 @@ import { createMusicPlayer, createWebAudioPlayer, type MusicPlayer, type SoundPl
 import { pickShake, type ShakeName, type SoundName } from "./sounds.js";
 
 interface SoundApi {
-  /** Plays an effect, if sound effects are on. */
-  playSound: (name: SoundName) => void;
+  /** Plays an effect, if sound effects are on, optionally shifted in pitch. */
+  playSound: (name: SoundName, semitones?: number) => void;
   /** Plays a dice shake, never the same one twice in a row. */
   playShake: () => void;
 }
@@ -77,8 +77,8 @@ export function SoundProvider({
 
   const api = useMemo<SoundApi>(
     () => ({
-      playSound: (name) => {
-        if (effectsOnRef.current) player.play(name);
+      playSound: (name, semitones) => {
+        if (effectsOnRef.current) player.play(name, semitones);
       },
       playShake: () => {
         if (!effectsOnRef.current) return;
