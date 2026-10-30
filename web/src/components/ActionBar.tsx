@@ -287,7 +287,7 @@ const stepperButtonStyle: CSSProperties = {
 const compactStepperButtonStyle: CSSProperties = {
   ...stepperButtonStyle,
   width: 44,
-  height: 40,
+  height: 44,
   borderRadius: 9,
   border: "none",
   background: "rgba(0,0,0,0.3)",
