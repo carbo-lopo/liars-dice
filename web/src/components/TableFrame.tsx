@@ -16,7 +16,8 @@ export function TableFrame({ children }: { children: ReactNode }) {
         style={{
           minHeight: "100dvh",
           position: "relative",
-          overflow: "hidden",
+          // Clips without becoming a scroll container, which would stop the table's dock sticking to the screen.
+          overflow: "clip",
           background: "var(--felt)",
           padding: PHONE_FELT_PADDING,
           display: "flex",

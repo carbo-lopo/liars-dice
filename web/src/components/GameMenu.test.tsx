@@ -9,6 +9,7 @@ function renderMenu() {
     <div>
       <GameMenu {...handlers} />
       <p>Elsewhere</p>
+      <button type="button">Next control</button>
     </div>,
     { wrapper: StrictWrapper },
   );
@@ -59,5 +60,19 @@ describe("GameMenu", () => {
     fireEvent.click(menuButton());
     fireEvent.pointerDown(screen.getByText("Elsewhere"));
     expect(item("Rules")).toBeNull();
+  });
+
+  it("closes when focus moves out of it, as when tabbing away", () => {
+    renderMenu();
+    fireEvent.click(menuButton());
+    fireEvent.blur(item("Quit Game")!, { relatedTarget: screen.getByRole("button", { name: "Next control" }) });
+    expect(item("Rules")).toBeNull();
+  });
+
+  it("stays open while focus moves between its own items", () => {
+    renderMenu();
+    fireEvent.click(menuButton());
+    fireEvent.blur(item("Rules")!, { relatedTarget: item("Options") });
+    expect(item("Rules")).not.toBeNull();
   });
 });

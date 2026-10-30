@@ -19,7 +19,7 @@ const DECORATIVE_DICE: { face: Face; rotate: number }[] = [
 
 export function StartScreen({ onPlay, onRules, onOptions }: StartScreenProps) {
   const phone = usePhoneLayout();
-  const buttonSize = phone ? phoneButtonStyle : undefined;
+  const phoneButton = phone ? phoneButtonStyle : undefined;
   return (
     <TableFrame>
       <div
@@ -58,13 +58,13 @@ export function StartScreen({ onPlay, onRules, onOptions }: StartScreenProps) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12, width: phone ? "100%" : 220 }}>
-          <button type="button" onClick={onPlay} style={{ ...primaryButtonStyle, ...buttonSize }}>
+          <button type="button" onClick={onPlay} style={{ ...primaryButtonStyle, ...phoneButton }}>
             Play
           </button>
-          <button type="button" onClick={onRules} style={{ ...secondaryButtonStyle, ...buttonSize }}>
+          <button type="button" onClick={onRules} style={{ ...secondaryButtonStyle, ...phoneButton }}>
             Rules
           </button>
-          <button type="button" onClick={onOptions} style={{ ...secondaryButtonStyle, ...buttonSize }}>
+          <button type="button" onClick={onOptions} style={{ ...secondaryButtonStyle, ...phoneButton }}>
             Options
           </button>
         </div>

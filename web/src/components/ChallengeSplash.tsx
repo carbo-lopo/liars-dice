@@ -61,7 +61,8 @@ export function ChallengeSplash({
     <div
       className="challenge-splash"
       style={{
-        position: "absolute",
+        // On a phone the table can be taller than the screen; the splash covers what's in view.
+        position: phone ? "fixed" : "absolute",
         inset: 0,
         background: "rgba(12, 8, 4, 0.6)",
         display: "flex",

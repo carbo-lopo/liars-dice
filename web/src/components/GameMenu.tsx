@@ -9,7 +9,7 @@ export interface GameMenuProps {
 /**
  * The phone layout's one header button, standing in for Rules, Options and
  * Quit Game. It opens a short list of the three; choosing one, pressing
- * Escape, or pressing anywhere else closes it.
+ * Escape, pressing anywhere else, or moving focus out of it closes it.
  */
 export function GameMenu({ onRules, onOptions, onQuit }: GameMenuProps) {
   const [open, setOpen] = useState(false);
@@ -41,7 +41,13 @@ export function GameMenu({ onRules, onOptions, onQuit }: GameMenuProps) {
   };
 
   return (
-    <div ref={rootRef} style={{ position: "relative" }}>
+    <div
+      ref={rootRef}
+      style={{ position: "relative" }}
+      onBlur={(event) => {
+        if (!rootRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
       <button
         ref={buttonRef}
         type="button"
@@ -89,7 +95,8 @@ const menuListStyle = {
   position: "absolute",
   top: "calc(100% + 6px)",
   right: 0,
-  zIndex: 20,
+  // Above the table, but below the LIAR! splash, which covers it if a bot calls while the menu is open.
+  zIndex: 5,
   minWidth: 180,
   padding: 6,
   display: "flex",
