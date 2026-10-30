@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { BiddingRules } from "@engine/rules/bidding.js";
 import { describe, expect, it, vi } from "vitest";
+import { fakeAudio } from "../test/fakeAudio";
 import { ActionBar } from "./ActionBar";
 
 function renderBar(rules: BiddingRules) {
@@ -59,5 +60,23 @@ describe("ActionBar", () => {
     for (const name of ["Aces", "Twos", "Threes", "Fours", "Fives", "Sixes"]) {
       expect(face(name)).toHaveProperty("disabled", false);
     }
+  });
+
+  it("plays the strong click for Place Bid and Call Liar, and the ordinary one elsewhere", () => {
+    const { played, Wrapper } = fakeAudio();
+    render(
+      <ActionBar
+        rules={{ currentBid: { quantity: 2, face: 3 }, isPalifico: false, totalDiceInPlay: 10 }}
+        canCall
+        disabled={false}
+        onPlaceBid={() => {}}
+        onCall={() => {}}
+      />,
+      { wrapper: Wrapper },
+    );
+    fireEvent.click(face("Fours"));
+    fireEvent.click(placeBid());
+    fireEvent.click(callLiar());
+    expect(played).toEqual(["click", "clickStrong", "clickStrong"]);
   });
 });

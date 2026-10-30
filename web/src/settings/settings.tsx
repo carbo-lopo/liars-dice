@@ -4,9 +4,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 export interface Settings {
   /** Bot bids' Continue button presses itself after a countdown. */
   autoContinue: boolean;
+  /** Clicks, dice and the other sound effects play. */
+  soundEffects: boolean;
+  /** The background music plays. */
+  music: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { autoContinue: true };
+export const DEFAULT_SETTINGS: Settings = { autoContinue: true, soundEffects: true, music: true };
 
 export const SETTINGS_STORAGE_KEY = "liars-dice.settings";
 
@@ -15,10 +19,12 @@ function loadSettings(): Settings {
   try {
     const saved: unknown = JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? "null");
     if (typeof saved !== "object" || saved === null) return DEFAULT_SETTINGS;
-    const { autoContinue } = saved as Partial<Record<keyof Settings, unknown>>;
-    return {
-      autoContinue: typeof autoContinue === "boolean" ? autoContinue : DEFAULT_SETTINGS.autoContinue,
+    const values = saved as Partial<Record<keyof Settings, unknown>>;
+    const pick = (key: keyof Settings) => {
+      const value = values[key];
+      return typeof value === "boolean" ? value : DEFAULT_SETTINGS[key];
     };
+    return { autoContinue: pick("autoContinue"), soundEffects: pick("soundEffects"), music: pick("music") };
   } catch {
     // Storage can be blocked (e.g. some private windows); play on with the defaults.
     return DEFAULT_SETTINGS;

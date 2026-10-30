@@ -1,6 +1,9 @@
+import { useEffect } from "react";
 import type { PlayerView } from "@engine/types/playerView.js";
 import { bidLabel } from "../lib/faceNames.js";
+import { useSound } from "../audio/SoundProvider.js";
 import { useTypewriter } from "../hooks/useTypewriter.js";
+import { prefersReducedMotion } from "../lib/motion.js";
 
 export interface CurrentBidCardProps {
   bid: { quantity: number; face: 1 | 2 | 3 | 4 | 5 | 6 } | null;
@@ -30,6 +33,10 @@ export function CurrentBidCard({
 }: CurrentBidCardProps) {
   const label = bid ? bidLabel(bid.quantity, bid.face) : "";
   const shownLabel = useTypewriter(label, typing && bid !== null, () => onTyped?.());
+  // Keystrokes while the bid types out, stopping as the last character appears.
+  const { startLoop } = useSound();
+  const typingOut = typing && bid !== null && shownLabel.length < label.length && !prefersReducedMotion();
+  useEffect(() => (typingOut ? startLoop("typing") : undefined), [typingOut, startLoop]);
   const hint = nextMoveHint(bid !== null, actorName);
   // Screen readers get the finished bid once rather than every typed character.
   const announcement = typing

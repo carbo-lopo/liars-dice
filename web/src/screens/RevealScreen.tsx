@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import type { Face } from "@engine/types/face.js";
+import { useSound } from "../audio/SoundProvider.js";
+import { countedSemitones } from "../audio/sounds.js";
 import { ContinueButton } from "../components/ContinueButton.js";
 import { FastForwardButton } from "../components/FastForwardButton.js";
 import { Die } from "../components/Die.js";
@@ -59,6 +61,35 @@ export function RevealScreen({
     if (covered) return;
     (verdictShown ? continueRef : fastForwardRef).current?.focus();
   }, [verdictShown, covered]);
+
+  // A sound for each die as it turns over: a chime if it counts, rising in pitch
+  // with each counted die, and a softer sound if it doesn't. With reduced motion
+  // the reveal starts out complete, so nothing is newly turned and it stays quiet.
+  const { playSound } = useSound();
+  const allDice = hands.flatMap((hand) => hand.dice);
+  const chimedThroughRef = useRef(revealed);
+  useEffect(() => {
+    // Several dice can turn in one render if their timers fire together.
+    for (let die = chimedThroughRef.current; die < revealed; die++) {
+      if (countsFor(allDice[die]!)) {
+        playSound("counted", countedSemitones(allDice.slice(0, die).filter(countsFor).length));
+      } else {
+        playSound("notCounted");
+      }
+    }
+    chimedThroughRef.current = Math.max(chimedThroughRef.current, revealed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealed]);
+
+  // The verdict's sound, one for a bid that held and another for a bluff. Unlike
+  // the dice, this plays with reduced motion too, as the verdict is shown.
+  const verdictSoundedRef = useRef(false);
+  useEffect(() => {
+    if (!verdictShown || verdictSoundedRef.current) return;
+    verdictSoundedRef.current = true;
+    playSound(bidHeld ? "bidTrue" : "bidFalse");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verdictShown]);
 
   let start = 0;
   const rows = hands.map(({ player, dice }) => {

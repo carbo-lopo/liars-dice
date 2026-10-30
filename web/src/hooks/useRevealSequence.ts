@@ -4,9 +4,9 @@ import { prefersReducedMotion } from "../lib/motion.js";
 /** Pause before the first die is turned over. */
 export const FIRST_REVEAL_MS = 1200;
 /** Gap between one die being turned over and the next. */
-export const REVEAL_GAP_MS = 800;
+export const REVEAL_GAP_MS = 500;
 /** Extra pause when the reveal moves on to the next player's hand. */
-export const NEXT_HAND_MS = 600;
+export const NEXT_HAND_MS = 300;
 /** Pause after the last die before the verdict appears. */
 export const VERDICT_MS = 1000;
 
@@ -18,7 +18,7 @@ export interface RevealSequence {
 }
 
 /** How much faster the reveal runs with fast-forward on. */
-export const FAST_FORWARD_SPEED = 2;
+export const FAST_FORWARD_SPEED = 1.5;
 
 /**
  * Turns dice face up one at a time while `active`, hand after hand in the

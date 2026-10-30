@@ -2,7 +2,17 @@ import { useEffect, useRef } from "react";
 import type { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import { bidLabel } from "../lib/faceNames.js";
 import { conjugate, possessive } from "../lib/grammar.js";
+import { useSound } from "../audio/SoundProvider.js";
+import { prefersReducedMotion } from "../lib/motion.js";
 import { ContinueButton } from "./ContinueButton.js";
+
+/**
+ * When the stamp hits in its 0.38 s drop (stamp-in in global.css), where its
+ * sound plays. With that animation's easing it reaches full size about 105 ms
+ * in, then briefly overshoots; the sound starts a little earlier to allow for
+ * the browser's audio output delay.
+ */
+export const STAMP_HIT_MS = 100;
 
 /**
  * Dims the table and stamps "LIAR!" across it, naming who called whose bid,
@@ -20,6 +30,21 @@ export function ChallengeSplash({
   covered?: boolean;
 }) {
   const continueRef = useRef<HTMLButtonElement>(null);
+  const { playSound } = useSound();
+
+  // The thump lands with the stamp; a ref keeps StrictMode's remount from playing it twice.
+  const stampedRef = useRef(false);
+  useEffect(() => {
+    if (stampedRef.current) return;
+    const timer = window.setTimeout(
+      () => {
+        stampedRef.current = true;
+        playSound("stamp");
+      },
+      prefersReducedMotion() ? 0 : STAMP_HIT_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [playSound]);
 
   // A covered screen can't take focus, e.g. when a bot calls while Rules is open.
   useEffect(() => {

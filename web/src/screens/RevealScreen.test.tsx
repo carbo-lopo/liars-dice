@@ -1,4 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
+import type { ComponentType, ReactNode } from "react";
 import { ChallengeResolution } from "@engine/models/challengeResolution.js";
 import { Player } from "@engine/models/player.js";
 import type { BotStrategy } from "@engine/types/botStrategy.js";
@@ -12,25 +13,28 @@ import {
 } from "../hooks/useRevealSequence";
 import { preferReducedMotion } from "../test/motion";
 import { StrictWrapper } from "../test/strictMode";
+import { countedSemitones } from "../audio/sounds";
+import { fakeAudio } from "../test/fakeAudio";
 import { RevealScreen } from "./RevealScreen";
 
 const bot: BotStrategy = { id: "idle", label: "Idle", decide: () => ({ type: "call" }) };
 
 /**
- * Cora bid 4 × Fives and Duke called. Hands are listed in turn order (Duke
- * first), and 5 Fives count with wild Aces, so the bid held and Duke loses a
- * die. Duke still has dice left after losing one.
+ * Cora bid `quantity` × Fives (4 by default) and Duke called. Hands are listed
+ * in turn order (Duke first), and 5 Fives count with wild Aces, so a bid of up
+ * to 5 held and Duke loses a die; above that it was a bluff and Cora loses one.
+ * Either way the loser still has dice left.
  */
-function coraCalledByDuke(): ChallengeResolution {
+function coraCalledByDuke({ quantity = 4 } = {}): ChallengeResolution {
   const duke = new Player("Duke", [3, 1, 4, 6], bot);
   const cora = new Player("Cora", [5, 2, 1, 6, 3], bot);
   const you = new Player("You", [5, 5, 4, 2, 6]);
   return new ChallengeResolution({
     challenger: duke,
     bidder: cora,
-    bid: { quantity: 4, face: 5 },
+    bid: { quantity, face: 5 },
     actualCount: 5,
-    outcome: "challenger-wrong",
+    outcome: quantity <= 5 ? "challenger-wrong" : "challenger-right",
     isPalifico: false,
     reveal: [duke, cora, you].map((player) => ({ player, dice: [...player.dice] })),
   });
@@ -51,12 +55,17 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function renderReveal({ fastForward = false, covered = false } = {}) {
+function renderReveal({
+  fastForward = false,
+  covered = false,
+  quantity = 4,
+  wrapper = StrictWrapper,
+}: { fastForward?: boolean; covered?: boolean; quantity?: number; wrapper?: ComponentType<{ children: ReactNode }> } = {}) {
   const onContinue = vi.fn();
   const onToggleFastForward = vi.fn();
   const element = (on: boolean, isCovered = covered) => (
     <RevealScreen
-      resolution={coraCalledByDuke()}
+      resolution={coraCalledByDuke({ quantity })}
       onContinue={onContinue}
       onQuit={() => {}}
       onRules={() => {}}
@@ -66,7 +75,7 @@ function renderReveal({ fastForward = false, covered = false } = {}) {
       covered={isCovered}
     />
   );
-  const view = render(element(fastForward), { wrapper: StrictWrapper });
+  const view = render(element(fastForward), { wrapper });
   return {
     onContinue,
     onToggleFastForward,
@@ -201,5 +210,45 @@ describe("RevealScreen", () => {
 
     act(() => continueButton().click());
     expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("chimes for each die that counts, rising in pitch, and plays the other sound for the rest", () => {
+    const { played, semitones, Wrapper } = fakeAudio();
+    renderReveal({ wrapper: Wrapper });
+    act(() => vi.advanceTimersByTime(FIRST_REVEAL_MS));
+    expect(played).toEqual(["counted"]); // Cora's first die is a Five
+    act(() => vi.advanceTimersByTime(REVEAL_GAP_MS));
+    expect(played).toEqual(["counted", "notCounted"]); // a Two doesn't count
+
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS - FIRST_REVEAL_MS - REVEAL_GAP_MS));
+    expect(played).toHaveLength(TOTAL_DICE); // every die, and no verdict yet
+    expect(played.filter((name) => name === "counted")).toHaveLength(5);
+    expect(semitones.filter((_, i) => played[i] === "counted")).toEqual([0, 1, 2, 3, 4].map(countedSemitones));
+    expect(semitones.filter((_, i) => played[i] === "notCounted").every((shift) => shift === 0)).toBe(true);
+  });
+
+  it("plays the win sound once as the verdict shows a bid that held", () => {
+    const { played, Wrapper } = fakeAudio();
+    renderReveal({ wrapper: Wrapper });
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS - 1));
+    expect(played).not.toContain("bidTrue");
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(played.filter((name) => name === "bidTrue" || name === "bidFalse")).toEqual(["bidTrue"]);
+    expect(played.at(-1)).toBe("bidTrue");
+  });
+
+  it("plays the lose sound for a bluff", () => {
+    const { played, Wrapper } = fakeAudio();
+    renderReveal({ wrapper: Wrapper, quantity: 6 });
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(played.filter((name) => name === "bidTrue" || name === "bidFalse")).toEqual(["bidFalse"]);
+  });
+
+  it("plays only the verdict when the reveal is shown at once for reduced motion", () => {
+    preferReducedMotion();
+    const { played, Wrapper } = fakeAudio();
+    renderReveal({ wrapper: Wrapper });
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(played).toEqual(["bidTrue"]);
   });
 });
