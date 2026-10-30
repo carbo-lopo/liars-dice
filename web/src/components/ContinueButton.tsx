@@ -1,10 +1,13 @@
-import { forwardRef, useEffect, useId, useState } from "react";
+import { forwardRef, useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import { COUNTDOWN_TICK_MS, useCountdown } from "../hooks/useCountdown.js";
 import { usePageVisible } from "../hooks/usePageVisible.js";
 import { prefersReducedMotion } from "../lib/motion.js";
 
 /** How long a counting-down Continue waits before pressing itself. */
 export const AUTO_CONTINUE_MS = 10_000;
+
+/** How long a touch on a counting-down Continue must last to pause it rather than press it. */
+export const LONG_PRESS_MS = 500;
 
 export interface ContinueButtonProps {
   onContinue: () => void;
@@ -16,19 +19,27 @@ export interface ContinueButtonProps {
   autoContinueMs?: number | null;
   /** Hold the countdown, e.g. while another screen covers the game. */
   paused?: boolean;
+  /** Fill the width of its container, larger, as on a phone. */
+  block?: boolean;
 }
 
 /**
  * The gold Continue button. With a countdown, a highlight bar inside it
  * shrinks to nothing and then the button presses itself; hovering or focusing
- * it, a hidden page, or `paused` all hold the countdown where it is.
+ * it, a hidden page, or `paused` all hold the countdown where it is. On a
+ * touchscreen, where there's no hovering, touching and holding it pauses the
+ * countdown until it's tapped.
  */
 export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>(function ContinueButton(
-  { onContinue, hidden = false, disabled = false, autoContinueMs = null, paused = false },
+  { onContinue, hidden = false, disabled = false, autoContinueMs = null, paused = false, block = false },
   ref,
 ) {
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [heldByTouch, setHeldByTouch] = useState(false);
+  const longPressTimer = useRef<number | null>(null);
+  // The release that ends a long press may still send a click; this swallows it.
+  const swallowClick = useRef(false);
   const pageVisible = usePageVisible();
   const hintId = useId();
 
@@ -40,19 +51,58 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
     if (!unavailable) return;
     setHovered(false);
     setFocused(false);
+    setHeldByTouch(false);
   }, [unavailable]);
 
   const counting = !unavailable && autoContinueMs !== null;
-  const held = paused || hovered || focused || !pageVisible;
+  const held = paused || hovered || focused || heldByTouch || !pageVisible;
   const remaining = useCountdown(counting ? autoContinueMs : null, held, onContinue);
   const seconds = Math.round((autoContinueMs ?? 0) / 1000);
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
+  };
+  useEffect(() => cancelLongPress, []);
+
+  const startPress = (event: PointerEvent<HTMLButtonElement>) => {
+    swallowClick.current = false;
+    if (event.pointerType === "mouse" || !counting) return;
+    cancelLongPress();
+    longPressTimer.current = window.setTimeout(() => {
+      longPressTimer.current = null;
+      swallowClick.current = true;
+      setHeldByTouch(true);
+    }, LONG_PRESS_MS);
+  };
+
+  const endPress = () => {
+    cancelLongPress();
+    // Any click from this release arrives before the timeout runs; some browsers
+    // send none after a long press, so the flag mustn't outlive the release.
+    if (swallowClick.current) window.setTimeout(() => (swallowClick.current = false), 0);
+  };
+
+  const click = () => {
+    if (swallowClick.current) {
+      swallowClick.current = false;
+      return;
+    }
+    onContinue();
+  };
 
   return (
     <>
       <button
         ref={ref}
         type="button"
-        onClick={onContinue}
+        onClick={click}
+        onPointerDown={startPress}
+        onPointerUp={endPress}
+        onPointerCancel={cancelLongPress}
+        onPointerLeave={cancelLongPress}
+        // A long press would otherwise open the browser's own menu or select the label.
+        onContextMenu={counting ? (event) => event.preventDefault() : undefined}
         disabled={unavailable}
         aria-describedby={counting ? hintId : undefined}
         onMouseEnter={() => setHovered(true)}
@@ -61,6 +111,7 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
         onBlur={() => setFocused(false)}
         style={{
           ...continueButtonStyle,
+          ...(block && blockStyle),
           visibility: hidden ? "hidden" : "visible",
           ...(disabled && { opacity: 0.45, cursor: "not-allowed", filter: "grayscale(0.6)" }),
         }}
@@ -83,7 +134,8 @@ export const ContinueButton = forwardRef<HTMLButtonElement, ContinueButtonProps>
       </button>
       {counting && (
         <span id={hintId} className="visually-hidden">
-          Continues by itself after {seconds} seconds; hovering over or focusing it pauses the countdown.
+          Continues by itself after {seconds} seconds; hovering over or focusing it, or touching and holding it,
+          pauses the countdown.
         </span>
       )}
     </>
@@ -102,4 +154,14 @@ const continueButtonStyle = {
   fontWeight: 700,
   fontSize: 15,
   cursor: "pointer",
+  userSelect: "none",
+  WebkitUserSelect: "none",
+  WebkitTouchCallout: "none",
+} as const;
+
+const blockStyle = {
+  width: "100%",
+  minHeight: 56,
+  borderRadius: 12,
+  fontSize: 18,
 } as const;

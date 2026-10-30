@@ -1,6 +1,35 @@
 import type { ReactNode } from "react";
+import { usePhoneLayout } from "../hooks/usePhoneLayout.js";
 
+/** Padding inside the phone layout's felt; the game table's dock reaches past it to the screen's edges. */
+export const PHONE_FELT_PADDING = 16;
+
+/**
+ * The felt the game is played on. On a wide screen it sits in a wooden rail;
+ * on a phone it fills the screen edge to edge, as the rail would cost too much width.
+ */
 export function TableFrame({ children }: { children: ReactNode }) {
+  const phone = usePhoneLayout();
+  if (phone) {
+    return (
+      <div
+        style={{
+          minHeight: "100dvh",
+          position: "relative",
+          // Clips without becoming a scroll container, which would stop the table's dock sticking to the screen.
+          overflow: "clip",
+          background: "var(--felt)",
+          padding: PHONE_FELT_PADDING,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          boxSizing: "border-box",
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
   return (
     <div
       style={{

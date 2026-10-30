@@ -1,5 +1,6 @@
 import type { GameResult } from "../hooks/useGame.js";
 import { TableFrame } from "../components/TableFrame.js";
+import { usePhoneLayout } from "../hooks/usePhoneLayout.js";
 import { conjugate } from "../lib/grammar.js";
 
 export interface GameOverScreenProps {
@@ -9,6 +10,7 @@ export interface GameOverScreenProps {
 }
 
 export function GameOverScreen({ result, onPlayAgain, onMainMenu }: GameOverScreenProps) {
+  const phone = usePhoneLayout();
   const { winnerName, youWon, loserNames } = result;
   const others = loserNames.join(" and ");
   const losersVerb = loserNames.length === 1 && loserNames[0] !== "You" ? "is" : "are";
@@ -98,6 +100,8 @@ export function GameOverScreen({ result, onPlayAgain, onMainMenu }: GameOverScre
             fontSize: 14,
             textDecoration: "underline",
             cursor: "pointer",
+            // Still reads as a link, with room around it to tap on a phone.
+            ...(phone && { minHeight: 44, padding: "0 16px" }),
           }}
         >
           Main Menu

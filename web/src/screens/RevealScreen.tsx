@@ -6,8 +6,10 @@ import { countedSemitones } from "../audio/sounds.js";
 import { ContinueButton } from "../components/ContinueButton.js";
 import { FastForwardButton } from "../components/FastForwardButton.js";
 import { Die } from "../components/Die.js";
+import { GameMenu } from "../components/GameMenu.js";
 import { HeaderButton } from "../components/HeaderButton.js";
 import { TableFrame } from "../components/TableFrame.js";
+import { usePhoneLayout } from "../hooks/usePhoneLayout.js";
 import { FAST_FORWARD_SPEED, useRevealSequence } from "../hooks/useRevealSequence.js";
 import { bidLabel, faceName, faceNameForCount } from "../lib/faceNames.js";
 import { conjugate, possessive } from "../lib/grammar.js";
@@ -120,6 +122,213 @@ export function RevealScreen({
       ? `${lastDone.player.name}: ${lastDone.counted} counted.`
       : "";
 
+  const phone = usePhoneLayout();
+
+  const title = (
+    <h1
+      style={{
+        margin: 0,
+        flex: phone ? 1 : undefined,
+        textAlign: phone ? "left" : "center",
+        fontFamily: "var(--font-display)",
+        fontWeight: 700,
+        fontSize: phone ? 17 : 20,
+        lineHeight: phone ? 1.35 : undefined,
+        color: "var(--text-primary)",
+      }}
+    >
+      {challenger.name} {conjugate(challenger.isHuman, "call")} LIAR on {possessive(bidder.isHuman, bidder.name)} bid
+      of {bidLabel(bid.quantity, bid.face)}!
+    </h1>
+  );
+
+  const handRows = rows.map((row) => {
+    const losing = verdictShown && row.player === loser;
+    const note = losing
+      ? row.player.isEliminated()
+        ? "Out of dice"
+        : "− 1 die"
+      : row.done
+        ? `${row.counted} counted`
+        : row.inProgress
+          ? "revealing…"
+          : "";
+    const dieSize = phone ? 32 : 42;
+    return (
+      <div
+        key={row.player.name}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: phone ? 10 : 16,
+          padding: phone ? "10px 12px" : "12px 16px",
+          borderRadius: 10,
+          background: losing
+            ? "rgba(154, 58, 44, 0.35)"
+            : row.inProgress
+              ? "rgba(201, 162, 39, 0.12)"
+              : "rgba(0, 0, 0, 0.18)",
+          border: `1px solid ${losing ? "#c4513f" : row.inProgress ? "rgba(201, 162, 39, 0.6)" : "rgba(233, 217, 184, 0.15)"}`,
+        }}
+      >
+        <span style={{ width: phone ? 46 : 64, fontSize: phone ? 14 : 15, fontWeight: 600, color: "var(--text-primary)" }}>
+          {row.player.name}
+        </span>
+        <div style={{ display: "flex", gap: phone ? 5 : 8, flex: 1, flexWrap: "wrap" }}>
+          {row.dice.map((face, i) => {
+            if (i >= row.shown) return <Die key={i} faceDown size={dieSize} />;
+            const counts = countsFor(face);
+            const justTurned = !verdictShown && row.first + i === revealed - 1;
+            return (
+              <Die
+                key={i}
+                face={face}
+                size={dieSize}
+                countsToward={counts ? bid.face : undefined}
+                dimmed={!counts}
+                className={justTurned ? "die-landed" : undefined}
+              />
+            );
+          })}
+        </div>
+        <span
+          style={
+            phone
+              ? { textAlign: "right", fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap" }
+              : { width: 90, textAlign: "right", fontSize: 13, color: "var(--text-secondary)" }
+          }
+        >
+          {note}
+        </span>
+      </div>
+    );
+  });
+
+  const tally = (
+    <div
+      style={{
+        width: phone ? undefined : 220,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: phone ? 8 : 12,
+        padding: phone ? "14px 16px" : 22,
+        borderRadius: 12,
+        background: "rgba(0, 0, 0, 0.28)",
+        border: "1px solid var(--panel-border)",
+      }}
+    >
+      <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-secondary)" }}>
+        {faceName(bid.face)} counted
+      </span>
+      <span
+        data-testid="reveal-count"
+        style={{
+          fontFamily: "var(--font-display)",
+          fontWeight: 700,
+          fontSize: phone ? 72 : 96,
+          lineHeight: 1,
+          color: metClaim ? "var(--gold-strong)" : "var(--text-primary)",
+        }}
+      >
+        {count}
+      </span>
+      <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>of {bid.quantity} claimed</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          style={{
+            width: phone ? 220 : 150,
+            height: 10,
+            borderRadius: 5,
+            overflow: "hidden",
+            background: "rgba(0, 0, 0, 0.3)",
+            border: "1px solid rgba(233, 217, 184, 0.25)",
+          }}
+        >
+          <div
+            data-testid="reveal-fill"
+            style={{ width: `${Math.min(count / bid.quantity, 1) * 100}%`, height: "100%", background: "var(--gold)" }}
+          />
+        </div>
+        {count > bid.quantity && (
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gold-strong)" }}>+{count - bid.quantity}</span>
+        )}
+      </div>
+      <span style={{ fontSize: 12, color: "var(--text-secondary)", textAlign: "center" }}>
+        {!onesWild ? "No wild Aces this round" : bid.face === 1 ? "Only Aces count" : "Aces are wild this round"}
+      </span>
+    </div>
+  );
+
+  const verdict = (
+    <div
+      style={{
+        flex: 1,
+        background: "var(--parchment)",
+        border: "5px solid var(--parchment-border)",
+        borderRadius: 6,
+        padding: phone ? "12px 16px" : "14px 20px",
+        color: "var(--ink)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+      }}
+    >
+      <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17 }}>{headline}</span>
+      <span style={{ fontSize: 15 }}>{outcome}</span>
+    </div>
+  );
+
+  const progress = (
+    <span
+      style={{
+        flex: 1,
+        textAlign: phone ? "left" : "center",
+        fontFamily: "var(--font-display)",
+        fontSize: phone ? 15 : 18,
+        color: "#E7D9B8",
+      }}
+    >
+      {current.done
+        ? "All dice are up…"
+        : `Revealing ${possessive(current.player.isHuman, current.player.name)} dice…`}
+    </span>
+  );
+
+  const announcer = (
+    <span className="visually-hidden" aria-live="polite" aria-atomic="true">
+      {announcement}
+    </span>
+  );
+
+  if (phone) {
+    return (
+      <TableFrame>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          {title}
+          <GameMenu onRules={onRules} onOptions={onOptions} onQuit={onQuit} />
+        </div>
+        {announcer}
+        {tally}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{handRows}</div>
+        <span style={{ flex: 1 }} />
+        {verdictShown ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {verdict}
+            <ContinueButton ref={continueRef} onContinue={onContinue} block />
+          </div>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {progress}
+            <FastForwardButton ref={fastForwardRef} on={fastForward} onToggle={onToggleFastForward} />
+            <ContinueButton ref={continueRef} onContinue={onContinue} disabled />
+          </div>
+        )}
+      </TableFrame>
+    );
+  }
+
   return (
     <TableFrame>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
@@ -128,171 +337,19 @@ export function RevealScreen({
         <HeaderButton onClick={onQuit}>Quit Game</HeaderButton>
       </div>
 
-      <h1
-        style={{
-          margin: 0,
-          textAlign: "center",
-          fontFamily: "var(--font-display)",
-          fontWeight: 700,
-          fontSize: 20,
-          color: "var(--text-primary)",
-        }}
-      >
-        {challenger.name} {conjugate(challenger.isHuman, "call")} LIAR on {possessive(bidder.isHuman, bidder.name)} bid
-        of {bidLabel(bid.quantity, bid.face)}!
-      </h1>
+      {title}
 
-      <span className="visually-hidden" aria-live="polite" aria-atomic="true">
-        {announcement}
-      </span>
+      {announcer}
 
       <div style={{ display: "flex", gap: 24, flex: 1, alignItems: "stretch" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 14 }}>
-          {rows.map((row) => {
-            const losing = verdictShown && row.player === loser;
-            const note = losing
-              ? row.player.isEliminated()
-                ? "Out of dice"
-                : "− 1 die"
-              : row.done
-                ? `${row.counted} counted`
-                : row.inProgress
-                  ? "revealing…"
-                  : "";
-            return (
-              <div
-                key={row.player.name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 16,
-                  padding: "12px 16px",
-                  borderRadius: 10,
-                  background: losing
-                    ? "rgba(154, 58, 44, 0.35)"
-                    : row.inProgress
-                      ? "rgba(201, 162, 39, 0.12)"
-                      : "rgba(0, 0, 0, 0.18)",
-                  border: `1px solid ${losing ? "#c4513f" : row.inProgress ? "rgba(201, 162, 39, 0.6)" : "rgba(233, 217, 184, 0.15)"}`,
-                }}
-              >
-                <span style={{ width: 64, fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
-                  {row.player.name}
-                </span>
-                <div style={{ display: "flex", gap: 8, flex: 1, flexWrap: "wrap" }}>
-                  {row.dice.map((face, i) => {
-                    if (i >= row.shown) return <Die key={i} faceDown size={42} />;
-                    const counts = countsFor(face);
-                    const justTurned = !verdictShown && row.first + i === revealed - 1;
-                    return (
-                      <Die
-                        key={i}
-                        face={face}
-                        size={42}
-                        countsToward={counts ? bid.face : undefined}
-                        dimmed={!counts}
-                        className={justTurned ? "die-landed" : undefined}
-                      />
-                    );
-                  })}
-                </div>
-                <span style={{ width: 90, textAlign: "right", fontSize: 13, color: "var(--text-secondary)" }}>
-                  {note}
-                </span>
-              </div>
-            );
-          })}
+          {handRows}
         </div>
-
-        <div
-          style={{
-            width: 220,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-            padding: 22,
-            borderRadius: 12,
-            background: "rgba(0, 0, 0, 0.28)",
-            border: "1px solid var(--panel-border)",
-          }}
-        >
-          <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-secondary)" }}>
-            {faceName(bid.face)} counted
-          </span>
-          <span
-            data-testid="reveal-count"
-            style={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 700,
-              fontSize: 96,
-              lineHeight: 1,
-              color: metClaim ? "var(--gold-strong)" : "var(--text-primary)",
-            }}
-          >
-            {count}
-          </span>
-          <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>of {bid.quantity} claimed</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div
-              style={{
-                width: 150,
-                height: 10,
-                borderRadius: 5,
-                overflow: "hidden",
-                background: "rgba(0, 0, 0, 0.3)",
-                border: "1px solid rgba(233, 217, 184, 0.25)",
-              }}
-            >
-              <div
-                data-testid="reveal-fill"
-                style={{ width: `${Math.min(count / bid.quantity, 1) * 100}%`, height: "100%", background: "var(--gold)" }}
-              />
-            </div>
-            {count > bid.quantity && (
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gold-strong)" }}>+{count - bid.quantity}</span>
-            )}
-          </div>
-          <span style={{ fontSize: 12, color: "var(--text-secondary)", textAlign: "center" }}>
-            {!onesWild ? "No wild Aces this round" : bid.face === 1 ? "Only Aces count" : "Aces are wild this round"}
-          </span>
-        </div>
+        {tally}
       </div>
 
       <div style={{ minHeight: 96, display: "flex", alignItems: "center", gap: 20 }}>
-        {verdictShown ? (
-          <div
-            style={{
-              flex: 1,
-              background: "var(--parchment)",
-              border: "5px solid var(--parchment-border)",
-              borderRadius: 6,
-              padding: "14px 20px",
-              color: "var(--ink)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-            }}
-          >
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17 }}>{headline}</span>
-            <span style={{ fontSize: 15 }}>{outcome}</span>
-          </div>
-        ) : (
-          <span
-            style={{
-              flex: 1,
-              textAlign: "center",
-              fontFamily: "var(--font-display)",
-              fontSize: 18,
-              color: "#E7D9B8",
-            }}
-          >
-            {current.done
-              ? "All dice are up…"
-              : `Revealing ${possessive(current.player.isHuman, current.player.name)} dice…`}
-          </span>
-        )}
+        {verdictShown ? verdict : progress}
         {!verdictShown && <FastForwardButton ref={fastForwardRef} on={fastForward} onToggle={onToggleFastForward} />}
         <ContinueButton ref={continueRef} onContinue={onContinue} disabled={!verdictShown} />
       </div>

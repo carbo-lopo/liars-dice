@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StrictWrapper } from "../test/strictMode";
-import { ContinueButton, type ContinueButtonProps } from "./ContinueButton";
+import { ContinueButton, LONG_PRESS_MS, type ContinueButtonProps } from "./ContinueButton";
 
 const COUNTDOWN = 2000;
 
@@ -20,6 +20,11 @@ function renderButton(props: Partial<ContinueButtonProps> = {}) {
   const rerender = (next: Partial<ContinueButtonProps>) =>
     view.rerender(<ContinueButton onContinue={onContinue} autoContinueMs={COUNTDOWN} {...props} {...next} />);
   return { onContinue, rerender, button: () => screen.getByRole("button", { name: "Continue" }) };
+}
+
+/** A pointer event of the given kind; jsdom has no PointerEvent, so `pointerType` is set by hand. */
+function press(target: Element, type: "pointerdown" | "pointerup", pointerType: "touch" | "mouse") {
+  fireEvent(target, Object.assign(new MouseEvent(type, { bubbles: true }), { pointerType }));
 }
 
 const barWidth = () => screen.getByTestId("countdown-bar").style.width;
@@ -59,6 +64,52 @@ describe("ContinueButton", () => {
 
     fireEvent.mouseLeave(button());
     act(() => vi.advanceTimersByTime(1500));
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("pauses when touched and held, without the release pressing it, until it's tapped", () => {
+    const { onContinue, button } = renderButton();
+    act(() => vi.advanceTimersByTime(500));
+    press(button(), "pointerdown", "touch");
+    act(() => vi.advanceTimersByTime(LONG_PRESS_MS));
+    press(button(), "pointerup", "touch");
+    fireEvent.click(button());
+    expect(onContinue).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(COUNTDOWN * 5));
+    expect(onContinue).not.toHaveBeenCalled();
+
+    press(button(), "pointerdown", "touch");
+    press(button(), "pointerup", "touch");
+    fireEvent.click(button());
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("doesn't swallow a later press when the browser sends no click after a long press", () => {
+    const { onContinue, button } = renderButton();
+    press(button(), "pointerdown", "touch");
+    act(() => vi.advanceTimersByTime(LONG_PRESS_MS));
+    press(button(), "pointerup", "touch");
+    act(() => vi.advanceTimersByTime(0));
+    fireEvent.click(button()); // e.g. Enter from a keyboard, with no pointer press first
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("presses at once for a quick tap", () => {
+    const { onContinue, button } = renderButton();
+    press(button(), "pointerdown", "touch");
+    act(() => vi.advanceTimersByTime(LONG_PRESS_MS - 100));
+    press(button(), "pointerup", "touch");
+    fireEvent.click(button());
+    expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  it("treats a long mouse press as an ordinary click", () => {
+    const { onContinue, button } = renderButton();
+    press(button(), "pointerdown", "mouse");
+    act(() => vi.advanceTimersByTime(LONG_PRESS_MS * 2));
+    press(button(), "pointerup", "mouse");
+    fireEvent.click(button());
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 

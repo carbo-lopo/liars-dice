@@ -1,5 +1,6 @@
 import type { Face } from "@engine/types/face.js";
 import { TableFrame } from "../components/TableFrame.js";
+import { usePhoneLayout } from "../hooks/usePhoneLayout.js";
 import { Die } from "../components/Die.js";
 
 export interface StartScreenProps {
@@ -17,6 +18,8 @@ const DECORATIVE_DICE: { face: Face; rotate: number }[] = [
 ];
 
 export function StartScreen({ onPlay, onRules, onOptions }: StartScreenProps) {
+  const phone = usePhoneLayout();
+  const phoneButton = phone ? phoneButtonStyle : undefined;
   return (
     <TableFrame>
       <div
@@ -42,7 +45,7 @@ export function StartScreen({ onPlay, onRules, onOptions }: StartScreenProps) {
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 700,
-              fontSize: 56,
+              fontSize: phone ? 52 : 56,
               color: "var(--text-primary)",
               textAlign: "center",
             }}
@@ -54,14 +57,14 @@ export function StartScreen({ onPlay, onRules, onOptions }: StartScreenProps) {
           </span>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, width: 220 }}>
-          <button type="button" onClick={onPlay} style={primaryButtonStyle}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, width: phone ? "100%" : 220 }}>
+          <button type="button" onClick={onPlay} style={{ ...primaryButtonStyle, ...phoneButton }}>
             Play
           </button>
-          <button type="button" onClick={onRules} style={secondaryButtonStyle}>
+          <button type="button" onClick={onRules} style={{ ...secondaryButtonStyle, ...phoneButton }}>
             Rules
           </button>
-          <button type="button" onClick={onOptions} style={secondaryButtonStyle}>
+          <button type="button" onClick={onOptions} style={{ ...secondaryButtonStyle, ...phoneButton }}>
             Options
           </button>
         </div>
@@ -81,6 +84,8 @@ const primaryButtonStyle = {
   fontSize: 17,
   cursor: "pointer",
 } as const;
+
+const phoneButtonStyle = { padding: "16px 0", fontSize: 18, borderRadius: 12 } as const;
 
 const secondaryButtonStyle = {
   background: "var(--panel-bg)",

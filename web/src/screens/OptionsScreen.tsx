@@ -23,8 +23,8 @@ export function OptionsScreen({ onBack }: { onBack: () => void }) {
           checked={settings.autoContinue}
           onChange={(autoContinue) => updateSettings({ autoContinue })}
         >
-          Automatically continue after {AUTO_CONTINUE_MS / 1000} seconds. You can hover over the continue button to
-          pause the countdown.
+          Automatically continue after {AUTO_CONTINUE_MS / 1000} seconds. You can hover over the continue button, or
+          touch and hold it, to pause the countdown.
         </SettingSwitch>
       </section>
 
