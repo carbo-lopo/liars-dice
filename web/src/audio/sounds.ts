@@ -1,3 +1,5 @@
+import bidFalseUrl from "../assets/sounds/bid-false.mp3";
+import bidTrueUrl from "../assets/sounds/bid-true.mp3";
 import clickUrl from "../assets/sounds/click.mp3";
 import clickStrongUrl from "../assets/sounds/click-strong.mp3";
 import countedUrl from "../assets/sounds/counted.mp3";
@@ -6,6 +8,7 @@ import shake2Url from "../assets/sounds/dice-shake-2.mp3";
 import shake3Url from "../assets/sounds/dice-shake-3.mp3";
 import dieLandUrl from "../assets/sounds/die-land.mp3";
 import stampUrl from "../assets/sounds/stamp.mp3";
+import typingUrl from "../assets/sounds/typing.mp3";
 import notCountedUrl from "../assets/sounds/not-counted.mp3";
 import musicUrl from "../assets/sounds/vibing-over-venus.mp3";
 
@@ -23,6 +26,12 @@ export const SOUND_URLS = {
   notCounted: notCountedUrl,
   /** The LIAR! stamp landing. */
   stamp: stampUrl,
+  /** The verdict on a reveal: the called bid was true. */
+  bidTrue: bidTrueUrl,
+  /** The verdict on a reveal: the called bid was a bluff. */
+  bidFalse: bidFalseUrl,
+  /** Keystrokes, looped while a bot's bid types out. */
+  typing: typingUrl,
   shake1: shake1Url,
   shake2: shake2Url,
   shake3: shake3Url,

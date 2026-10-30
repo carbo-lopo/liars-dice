@@ -10,10 +10,16 @@ interface SoundApi {
   playSound: (name: SoundName, semitones?: number) => void;
   /** Plays a dice shake, never the same one twice in a row. */
   playShake: () => void;
+  /** Loops an effect, if sound effects are on, until the returned function is called. */
+  startLoop: (name: SoundName) => () => void;
 }
 
 // Without a provider (e.g. a component rendered on its own in a test), everything is silent.
-const SoundContext = createContext<SoundApi>({ playSound: () => {}, playShake: () => {} });
+const SoundContext = createContext<SoundApi>({
+  playSound: () => {},
+  playShake: () => {},
+  startLoop: () => () => {},
+});
 
 export function useSound(): SoundApi {
   return useContext(SoundContext);
@@ -86,6 +92,7 @@ export function SoundProvider({
         lastShakeRef.current = shake;
         player.play(shake);
       },
+      startLoop: (name) => (effectsOnRef.current ? player.loop(name) : () => {}),
     }),
     [player, effectsOnRef],
   );

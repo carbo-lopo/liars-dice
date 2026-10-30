@@ -52,13 +52,15 @@ describe("SoundProvider", () => {
 
   it("plays nothing with sound effects switched off", () => {
     saveSettings({ soundEffects: false });
-    const { played, Wrapper } = fakeAudio();
+    const { played, looping, Wrapper } = fakeAudio();
     const { result } = renderHook(() => useSound(), { wrapper: Wrapper });
     act(() => result.current.playSound("stamp"));
     act(() => result.current.playShake());
+    act(() => void result.current.startLoop("typing"));
     render(<button type="button">Rules</button>, { wrapper: Wrapper });
     fireEvent.click(screen.getByText("Rules"));
     expect(played).toEqual([]);
+    expect(looping).toEqual([]);
   });
 
   it("unlocks audio and starts the music on the first press", () => {

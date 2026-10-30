@@ -6,12 +6,17 @@ export interface SoundPlayer {
   unlock(): void;
   /** `semitones` shifts the pitch (and, with it, the speed) from the recording. */
   play(name: SoundName, semitones?: number): void;
+  /** Loops `name` from a random point until the returned function is called, which fades it out. */
+  loop(name: SoundName): () => void;
 }
 
 /** Plays or pauses the looping background music. */
 export interface MusicPlayer {
   setPlaying(playing: boolean): void;
 }
+
+/** How long a loop takes to fade out when stopped, so it doesn't end with a click. */
+const LOOP_FADE_S = 0.04;
 
 type AudioContextClass = typeof AudioContext;
 
@@ -61,6 +66,34 @@ export function createWebAudioPlayer(): SoundPlayer {
         source.connect(ctx.destination);
         source.start();
       });
+    },
+    loop(name) {
+      const ctx = context;
+      if (!ctx) return () => {};
+      let stopped = false;
+      let fadeOut: (() => void) | null = null;
+      void load(ctx, name).then((buffer) => {
+        // Stopped before the sound had loaded: never start it.
+        if (!buffer || stopped) return;
+        const gain = ctx.createGain();
+        gain.connect(ctx.destination);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(gain);
+        source.start(0, Math.random() * buffer.duration);
+        fadeOut = () => {
+          const now = ctx.currentTime;
+          gain.gain.setValueAtTime(gain.gain.value, now);
+          gain.gain.linearRampToValueAtTime(0, now + LOOP_FADE_S);
+          source.stop(now + LOOP_FADE_S);
+        };
+      });
+      return () => {
+        if (stopped) return;
+        stopped = true;
+        fadeOut?.();
+      };
     },
   };
 }

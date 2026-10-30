@@ -23,16 +23,16 @@ const bot: BotStrategy = { id: "idle", label: "Idle", decide: () => ({ type: "ca
  * first), and 5 Fives count with wild Aces, so the bid held and Duke loses a
  * die. Duke still has dice left after losing one.
  */
-function coraCalledByDuke(): ChallengeResolution {
+function coraCalledByDuke({ quantity = 4 } = {}): ChallengeResolution {
   const duke = new Player("Duke", [3, 1, 4, 6], bot);
   const cora = new Player("Cora", [5, 2, 1, 6, 3], bot);
   const you = new Player("You", [5, 5, 4, 2, 6]);
   return new ChallengeResolution({
     challenger: duke,
     bidder: cora,
-    bid: { quantity: 4, face: 5 },
+    bid: { quantity, face: 5 },
     actualCount: 5,
-    outcome: "challenger-wrong",
+    outcome: quantity <= 5 ? "challenger-wrong" : "challenger-right",
     isPalifico: false,
     reveal: [duke, cora, you].map((player) => ({ player, dice: [...player.dice] })),
   });
@@ -225,15 +225,55 @@ describe("RevealScreen", () => {
     act(() => vi.advanceTimersByTime(REVEAL_GAP_MS));
     expect(played).toEqual(["counted", "notCounted"]); // a Two doesn't count
 
-    act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS));
-    const dice = coraCalledByDuke().reveal.flatMap((hand) => hand.dice).length;
-    expect(played).toHaveLength(dice);
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS - FIRST_REVEAL_MS - REVEAL_GAP_MS));
+    expect(played).toHaveLength(TOTAL_DICE); // every die, and no verdict yet
     expect(played.filter((name) => name === "counted")).toHaveLength(5);
     expect(semitones.filter((_, i) => played[i] === "counted")).toEqual([0, 1, 2, 3, 4].map(countedSemitones));
     expect(semitones.filter((_, i) => played[i] === "notCounted").every((shift) => shift === 0)).toBe(true);
   });
 
-  it("is silent when the reveal is shown at once for reduced motion", () => {
+  it("plays the win sound once as the verdict shows a bid that held", () => {
+    const { played, Wrapper } = fakeAudio();
+    render(
+      <RevealScreen
+        resolution={coraCalledByDuke()}
+        onContinue={() => {}}
+        onQuit={() => {}}
+        onRules={() => {}}
+        onOptions={() => {}}
+        fastForward={false}
+        onToggleFastForward={() => {}}
+        covered={false}
+      />,
+      { wrapper: Wrapper },
+    );
+    act(() => vi.advanceTimersByTime(ALL_DICE_MS + VERDICT_MS - 1));
+    expect(played).not.toContain("bidTrue");
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(played.filter((name) => name === "bidTrue" || name === "bidFalse")).toEqual(["bidTrue"]);
+    expect(played.at(-1)).toBe("bidTrue");
+  });
+
+  it("plays the lose sound for a bluff", () => {
+    const { played, Wrapper } = fakeAudio();
+    render(
+      <RevealScreen
+        resolution={coraCalledByDuke({ quantity: 6 })}
+        onContinue={() => {}}
+        onQuit={() => {}}
+        onRules={() => {}}
+        onOptions={() => {}}
+        fastForward={false}
+        onToggleFastForward={() => {}}
+        covered={false}
+      />,
+      { wrapper: Wrapper },
+    );
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(played.filter((name) => name === "bidTrue" || name === "bidFalse")).toEqual(["bidFalse"]);
+  });
+
+  it("plays only the verdict when the reveal is shown at once for reduced motion", () => {
     preferReducedMotion();
     const { played, Wrapper } = fakeAudio();
     render(
@@ -250,6 +290,6 @@ describe("RevealScreen", () => {
       { wrapper: Wrapper },
     );
     act(() => vi.advanceTimersByTime(60_000));
-    expect(played).toEqual([]);
+    expect(played).toEqual(["bidTrue"]);
   });
 });

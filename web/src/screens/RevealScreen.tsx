@@ -81,6 +81,16 @@ export function RevealScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealed]);
 
+  // The verdict's sound: a win for a bid that held, a loss for a bluff. Unlike
+  // the dice, this plays with reduced motion too, as the verdict is shown.
+  const verdictSoundedRef = useRef(false);
+  useEffect(() => {
+    if (!verdictShown || verdictSoundedRef.current) return;
+    verdictSoundedRef.current = true;
+    playSound(bidHeld ? "bidTrue" : "bidFalse");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verdictShown]);
+
   let start = 0;
   const rows = hands.map(({ player, dice }) => {
     const first = start;
