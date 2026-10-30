@@ -42,5 +42,5 @@ The script expects the Kenney files under their original names, and the
 others renamed: the stamp to `stamp.mp3`, the typing to `typing.mp3`, the
 lose sound to `lose.mp3`, and the music to
 `vibing-over-venus.mp3`. Some effects use only part of their original (the
-typing loop), and some are filtered (the counted chime's overtones are
-softened); the script says which.
+typing loop), some are filtered (the counted chime's overtones are softened),
+and the sound for a bid that held is reversed; the script says which.
