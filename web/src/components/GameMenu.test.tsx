@@ -25,8 +25,11 @@ describe("GameMenu", () => {
     expect(item("Options")).toBeNull();
     expect(menuButton().getAttribute("aria-expanded")).toBe("false");
 
+    expect(menuButton().hasAttribute("aria-controls")).toBe(false);
+
     fireEvent.click(menuButton());
     expect(menuButton().getAttribute("aria-expanded")).toBe("true");
+    expect(document.getElementById(menuButton().getAttribute("aria-controls")!)).not.toBeNull();
     expect(["Rules", "Options", "Quit Game"].every((name) => item(name))).toBe(true);
 
     fireEvent.click(item("Options")!);

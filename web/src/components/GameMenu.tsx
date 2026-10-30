@@ -53,7 +53,7 @@ export function GameMenu({ onRules, onOptions, onQuit }: GameMenuProps) {
         type="button"
         aria-label="Menu"
         aria-expanded={open}
-        aria-controls={listId}
+        aria-controls={open ? listId : undefined}
         onClick={() => setOpen((wasOpen) => !wasOpen)}
         style={menuButtonStyle}
       >
